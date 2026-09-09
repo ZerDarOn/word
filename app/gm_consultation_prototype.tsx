@@ -5,18 +5,13 @@ import {
   prototypeScenarios,
   type ConsultationMode,
   type PrototypeScenario,
-  type RecordKind,
 } from "./prototype_scenarios";
-
-type ReviewStatus = "待确认" | "客观事实" | "NPC 主张" | "仅本场" | "废弃";
-
-type SessionRecord = {
-  id: number;
-  text: string;
-  kind: RecordKind;
-  scenario: string;
-  status: ReviewStatus;
-};
+import { CampaignProjectDashboard } from "./campaign_project_dashboard";
+import { CreativeWritingWorkspace } from "./creative_writing_workspace";
+import { LoreCueAiAssistant } from "./lorecue_ai_assistant";
+import { NarrativeAssetLibrary } from "./narrative_asset_library";
+import { SessionArchivePanel } from "./session_archive_panel";
+import type { ReviewStatus, SessionRecord } from "./session_archive_data";
 
 const modeLabels: Record<ConsultationMode, string> = {
   strict: "严格依据",
@@ -31,12 +26,17 @@ function evidenceTone(scenario: PrototypeScenario) {
 }
 
 export function GmConsultationPrototype() {
+  const [activeView, setActiveView] = useState<
+    "creative" | "projects" | "consultation" | "archive" | "library"
+  >("creative");
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiScope, setAiScope] = useState("潮汐来信 · 当前创作项目");
   const [selectedId, setSelectedId] = useState(prototypeScenarios[0].id);
   const [mode, setMode] = useState<ConsultationMode>("minimal");
   const [question, setQuestion] = useState(prototypeScenarios[0].question);
   const [showSources, setShowSources] = useState(false);
   const [showAlternatives, setShowAlternatives] = useState(false);
-  const [showReview, setShowReview] = useState(false);
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [feedback, setFeedback] = useState("选择一个棘手情况，看看咨询台如何拆解。");
   const [records, setRecords] = useState<SessionRecord[]>([
@@ -97,27 +97,91 @@ export function GmConsultationPrototype() {
 
   const pendingCount = records.filter((record) => record.status === "待确认").length;
 
+  function openAi(prompt = "", scope = "潮汐来信 · 当前创作项目") {
+    setAiPrompt(prompt);
+    setAiScope(scope);
+    setAiOpen(true);
+  }
+
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#consultation-result">跳到咨询结果</a>
+      <a className="skip-link" href="#main-content">跳到主要内容</a>
 
       <header className="topbar">
         <div className="brand-block">
           <span className="brand-mark" aria-hidden="true">LC</span>
           <div><strong>LoreCue</strong><span>叙事线索台</span></div>
         </div>
-        <div className="project-switcher" aria-label="当前项目">
-          <span>当前项目</span>
-          <strong>萨菲港旧案</strong>
-          <small>第 3 次团 · 码头追踪</small>
-        </div>
-        <div className="session-state">
-          <span className="live-dot" aria-hidden="true" />
-          本场辅助模式
+        <nav className="primary-navigation" aria-label="主要功能">
+          <button
+            className={activeView === "creative" ? "active" : ""}
+            onClick={() => setActiveView("creative")}
+            aria-current={activeView === "creative" ? "page" : undefined}
+          >
+            创作
+          </button>
+          <button
+            className={activeView === "projects" ? "active" : ""}
+            onClick={() => setActiveView("projects")}
+            aria-current={activeView === "projects" ? "page" : undefined}
+          >
+            我的团
+          </button>
+          <button
+            className={activeView === "consultation" ? "active" : ""}
+            onClick={() => setActiveView("consultation")}
+            aria-current={activeView === "consultation" ? "page" : undefined}
+          >
+            主持人咨询台
+          </button>
+          <button
+            className={activeView === "archive" ? "active" : ""}
+            onClick={() => setActiveView("archive")}
+            aria-current={activeView === "archive" ? "page" : undefined}
+          >
+            场次档案
+          </button>
+          <button
+            className={activeView === "library" ? "active" : ""}
+            onClick={() => setActiveView("library")}
+            aria-current={activeView === "library" ? "page" : undefined}
+          >
+            资料库
+          </button>
+        </nav>
+        <div className="topbar-actions">
+          <div className="session-state">
+            <span className="live-dot" aria-hidden="true" />
+            {activeView === "creative"
+              ? "潮汐来信 · 创作空间"
+              : activeView === "projects"
+                ? "5 个团项目 · 4 种规则"
+                : activeView === "consultation"
+                  ? "萨菲港旧案 · 老友组 · 本场辅助"
+                  : activeView === "archive"
+                    ? "萨菲港旧案 · 老友组 · 第 3 次团"
+                    : "全部资料 · 跨项目可见"}
+          </div>
+          <button className="global-ai-button" onClick={() => openAi()}>
+            <span aria-hidden="true">AI</span>助手
+          </button>
         </div>
       </header>
 
-      <main className="workspace">
+      <CreativeWritingWorkspace
+        hidden={activeView !== "creative"}
+        onAskAi={(prompt, scope) => openAi(prompt, `${scope} · 当前创作项目`)}
+      />
+
+      <CampaignProjectDashboard
+        hidden={activeView !== "projects"}
+        onOpenCurrentProject={() => setActiveView("consultation")}
+      />
+
+      <NarrativeAssetLibrary hidden={activeView !== "library"} />
+
+      {activeView === "consultation" ? (
+        <main className="workspace" id="main-content">
         <aside className="scenario-rail" aria-label="验证场景">
           <div className="section-heading">
             <span className="eyebrow">原型试用</span>
@@ -311,50 +375,27 @@ export function GmConsultationPrototype() {
             <span className="eyebrow">团后待确认</span>
             <h2>{pendingCount} 条临场内容</h2>
             <p>已说出口或已经发生，不等于原剧本就是这样写的。</p>
-            <button className="secondary-action" onClick={() => setShowReview((current) => !current)}>
-              {showReview ? "关闭归档台" : "打开归档台"}
+            <button className="secondary-action" onClick={() => setActiveView("archive")}>
+              打开场次档案
             </button>
           </section>
         </aside>
-      </main>
+        </main>
+      ) : activeView === "archive" ? (
+        <SessionArchivePanel
+          records={records}
+          onConfirmRecord={handleConfirmRecord}
+          onReturnToConsultation={() => setActiveView("consultation")}
+        />
+      ) : null}
 
-      {showReview && (
-        <section className="review-drawer" aria-label="团后归档台">
-          <div className="review-intro">
-            <span className="eyebrow">团后整理</span>
-            <h2>把口胡变成可追踪的历史</h2>
-            <p>先承认它在桌上发生过，再决定是否进入长期设定。</p>
-          </div>
-          <div className="record-list">
-            {records.length === 0 ? (
-              <p className="empty-note">还没有使用过任何建议。</p>
-            ) : (
-              records.map((record) => (
-                <article className="record-item" key={record.id}>
-                  <div>
-                    <span className="record-kind">{record.kind === "spoken" ? "实际说出" : "实际发生"}</span>
-                    <h3>{record.text}</h3>
-                    <p>来自：{record.scenario}</p>
-                  </div>
-                  <label>
-                    归档为
-                    <select
-                      value={record.status}
-                      onChange={(event) => handleConfirmRecord(record.id, event.target.value as ReviewStatus)}
-                    >
-                      <option>待确认</option>
-                      <option>客观事实</option>
-                      <option>NPC 主张</option>
-                      <option>仅本场</option>
-                      <option>废弃</option>
-                    </select>
-                  </label>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-      )}
+      <LoreCueAiAssistant
+        key={`${aiOpen}-${aiScope}-${aiPrompt}`}
+        open={aiOpen}
+        initialPrompt={aiPrompt}
+        scope={aiScope}
+        onClose={() => setAiOpen(false)}
+      />
     </div>
   );
 }
