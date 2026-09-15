@@ -142,12 +142,13 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
 });
 
 test("connects the full creative workflow from project creation to version review", async () => {
-  const [workspace, projectData, creationDialog, projectStudio, narrativeViews] = await Promise.all([
+  const [workspace, projectData, creationDialog, projectStudio, narrativeViews, documentEditor] = await Promise.all([
     readFile(new URL("../app/creative_writing_workspace.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_project_data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_project_creation_dialog.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_document_editor.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(workspace, /handleCreateProject/);
@@ -167,7 +168,7 @@ test("connects the full creative workflow from project creation to version revie
   assert.match(projectStudio, /时间线/);
   assert.match(projectStudio, /版本/);
   assert.match(projectStudio, /handleCreateSnapshot/);
-  assert.match(projectStudio, /插入素材/);
+  assert.match(documentEditor, /插入素材/);
   assert.match(narrativeViews, /人物关系/);
   assert.match(projectStudio, /不会自动覆盖当前正文/);
 });
@@ -520,4 +521,27 @@ test("organizes character portraits by identity, state, and asset provenance", a
   assert.match(portraitWorkbench, /不会自动替换/);
   assert.match(portraitWorkbench, /handleSavePortrait/);
   assert.match(narrativeViews, /<CreativePortraitWorkbench/);
+});
+
+test("provides a persistent long-form writing editor with reviewable AI changes", async () => {
+  const [projectStudio, documentEditor] = await Promise.all([
+    readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_document_editor.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(projectStudio, /localStorage/);
+  assert.match(projectStudio, /lorecue-writing/);
+  assert.match(projectStudio, /全文搜索/);
+  assert.match(projectStudio, /项目目录与设定/);
+  assert.match(projectStudio, /handleCreateDocument/);
+  assert.match(projectStudio, /自动保存/);
+  assert.match(projectStudio, /<CreativeDocumentEditor/);
+  assert.match(documentEditor, /Markdown/);
+  assert.match(documentEditor, /专注模式/);
+  assert.match(documentEditor, /阅读预览/);
+  assert.match(documentEditor, /AI 修改预览/);
+  assert.match(documentEditor, /接受修改/);
+  assert.match(documentEditor, /保留原文/);
+  assert.match(documentEditor, /不会直接覆盖正文/);
+  assert.match(documentEditor, /insertMarkup/);
 });

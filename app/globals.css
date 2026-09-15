@@ -715,7 +715,17 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 }
 .text-back-button:hover { color: var(--accent); }
 .document-rail h1 { margin-bottom: 24px; font-size: 22px; }
+.document-project-switch {
+  width: 100%; min-height: 34px; margin: -8px 0 18px; padding: 7px 9px; border: 1px solid var(--line);
+  border-radius: 5px; color: var(--muted); font-size: 9px; font-weight: 800; text-align: left;
+  background: var(--panel); cursor: pointer;
+}
+.document-project-switch:hover { color: var(--accent); border-color: var(--accent); }
 .document-tree { display: grid; gap: 18px; }
+.document-full-search { display: grid; gap: 5px; }
+.document-full-search span { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.document-full-search input { width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-size: 9px; background: var(--panel); }
+.document-search-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); font-size: 9px; text-align: center; }
 .document-tree section > div { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
 .document-tree section > div strong { color: var(--muted); font-size: 9px; letter-spacing: 0.12em; }
 .document-tree section > div button {
@@ -729,6 +739,8 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   color: var(--ink); background: var(--panel);
 }
 .document-tree section > button.active { border-inline-start: 2px solid var(--accent); font-weight: 800; }
+.document-tree section > button span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.document-tree section > button small { display: block; margin-top: 3px; color: var(--muted); font-size: 7px; font-weight: 400; }
 .writing-canvas {
   display: flex; flex-direction: column; width: 100%; max-width: 900px; min-height: calc(100vh - 76px);
   margin: 0 auto; padding: 28px clamp(28px, 5vw, 76px) 36px;
@@ -753,6 +765,56 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   color: var(--ink); font-family: Georgia, "Songti SC", serif; font-size: 17px; line-height: 2;
   background: transparent;
 }
+.enhanced-editor { position: relative; max-width: 1100px; }
+.editor-command-bar { min-height: 53px; }
+.editor-status-cluster { display: flex; align-items: center; gap: 8px; }
+.editor-status-cluster > span { color: var(--muted); font-size: 8px; }
+.editor-status-cluster .save-state { padding: 5px 7px; border-radius: 999px; color: var(--amber); font-weight: 800; background: var(--amber-soft); }
+.editor-status-cluster .state-已保存 { color: var(--forest); background: var(--forest-soft); }
+.editor-status-cluster .state-保存中 { color: var(--blue); background: var(--blue-soft); }
+.editor-status-cluster button { min-height: 32px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 5px; font-size: 8px; font-weight: 800; background: var(--panel); cursor: pointer; }
+.editor-status-cluster .primary-action { color: white; border-color: var(--accent); background: var(--accent); }
+.editor-mode-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 8px; }
+.editor-mode-row nav { display: flex; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.editor-mode-row nav button { min-height: 28px; padding: 5px 10px; border: 0; border-radius: 4px; color: var(--muted); font-size: 8px; background: transparent; cursor: pointer; }
+.editor-mode-row nav button.active { color: var(--ink); font-weight: 800; background: var(--paper-deep); }
+.editor-mode-row label { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 8px; font-weight: 800; }
+.editor-mode-row select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-size: 8px; background: var(--panel); }
+.markdown-toolbar { position: sticky; z-index: 6; top: 0; display: grid; grid-template-columns: repeat(5, auto) 1fr auto auto; align-items: center; gap: 4px; padding: 7px; border-block: 1px solid var(--line); background: var(--paper); }
+.markdown-toolbar > button, .markdown-toolbar .material-insert-wrap > button { min-width: 31px; min-height: 29px; padding: 5px 8px; border: 1px solid transparent; border-radius: 4px; color: var(--muted); font-size: 8px; background: transparent; cursor: pointer; }
+.markdown-toolbar > button:hover, .markdown-toolbar .material-insert-wrap > button:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
+.markdown-toolbar .ai-review-button { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
+.enhanced-editor .editor-title, .enhanced-editor .editor-body, .markdown-preview { width: 100%; align-self: center; transition: width .2s ease; }
+.enhanced-editor .page-窄页 { width: min(620px, 100%); }
+.enhanced-editor .page-标准 { width: min(790px, 100%); }
+.enhanced-editor .page-宽页 { width: 100%; }
+.enhanced-editor .editor-title input { margin-top: 28px; }
+.enhanced-editor .editor-body textarea { min-height: 550px; }
+.markdown-preview { min-height: 580px; padding: 42px 46px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); box-shadow: 0 8px 28px rgba(56, 46, 31, .06); }
+.markdown-preview > header { margin-bottom: 30px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.markdown-preview > header span { color: var(--accent); font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.markdown-preview > header h1 { margin: 9px 0 0; font-size: 34px; }
+.markdown-preview > h2 { margin: 32px 0 13px; font-size: 22px; }
+.markdown-preview > p, .markdown-preview blockquote { font-family: Georgia, "Songti SC", serif; font-size: 15px; line-height: 2; }
+.markdown-preview blockquote { margin: 20px 0; padding: 12px 18px; border-inline-start: 3px solid var(--accent); color: var(--muted); background: var(--paper-deep); }
+.creative-studio:has(.focus-mode) { grid-template-columns: 0 minmax(480px, 1fr) 0; }
+.creative-studio:has(.focus-mode) > .document-rail, .creative-studio:has(.focus-mode) > .writing-inspector { overflow: hidden; padding-inline: 0; opacity: 0; pointer-events: none; }
+.focus-mode { max-width: 980px; padding-top: 38px; }
+.focus-mode .editor-command-bar > div:first-child, .focus-mode .markdown-toolbar { opacity: .35; }
+.ai-edit-review { position: absolute; z-index: 20; top: 92px; right: 22px; width: min(470px, calc(100% - 44px)); padding: 17px; border: 1px solid var(--line); border-top: 4px solid var(--blue); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+.ai-edit-review > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.ai-edit-review > header h3 { margin: 5px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 15px; }
+.ai-edit-review > header > button { border: 0; color: var(--muted); font-size: 18px; background: transparent; cursor: pointer; }
+.ai-edit-review > p { color: var(--muted); font-size: 8px; line-height: 1.6; }
+.ai-edit-diff { display: grid; gap: 7px; }
+.ai-edit-diff article { padding: 11px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); }
+.ai-edit-diff span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 7px; font-weight: 800; }
+.ai-edit-diff del, .ai-edit-diff ins { display: block; padding: 7px; font-family: Georgia, "Songti SC", serif; font-size: 10px; line-height: 1.6; }
+.ai-edit-diff del { color: var(--accent-dark); background: var(--accent-soft); }
+.ai-edit-diff ins { color: var(--forest); text-decoration: none; background: var(--forest-soft); }
+.ai-edit-review > footer { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }
+.ai-edit-review > footer button { min-height: 30px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-size: 8px; font-weight: 800; background: var(--paper); cursor: pointer; }
+.ai-edit-review > footer .primary-action { color: white; border-color: var(--accent); background: var(--accent); }
 .writing-feedback { min-height: 20px; margin: 14px 0 0; color: var(--muted); font-size: 10px; }
 .inspector-tabs { display: grid; grid-template-columns: repeat(3, 1fr); margin: -6px 0 22px; border-bottom: 1px solid var(--line); }
 .inspector-tabs button { min-height: 36px; border: 0; color: var(--muted); font-size: 10px; background: transparent; cursor: pointer; }
@@ -2853,8 +2915,20 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .writing-canvas { min-height: auto; padding: 24px 18px 34px; }
   .writing-canvas > header { align-items: flex-start; flex-direction: column; }
   .writing-actions { flex-wrap: wrap; }
+  .editor-status-cluster { flex-wrap: wrap; }
+  .editor-mode-row { align-items: stretch; flex-direction: column; }
+  .editor-mode-row nav { overflow-x: auto; }
+  .editor-mode-row nav button { flex: 1 0 auto; }
+  .editor-mode-row label { justify-content: space-between; }
+  .markdown-toolbar { display: flex; overflow-x: auto; }
+  .markdown-toolbar > span { flex: 1 0 12px; }
+  .markdown-toolbar > button, .markdown-toolbar .material-insert-wrap { flex: 0 0 auto; }
   .editor-title input { margin-top: 28px; }
   .editor-body textarea { min-height: 420px; }
+  .markdown-preview { min-height: 480px; padding: 28px 22px; }
+  .ai-edit-review { position: fixed; inset: auto 10px 10px; width: auto; max-height: calc(100vh - 20px); overflow-y: auto; }
+  .ai-edit-review > footer { align-items: stretch; flex-direction: column; }
+  .creative-studio:has(.focus-mode) > .document-rail, .creative-studio:has(.focus-mode) > .writing-inspector { display: none; }
   .writing-inspector { display: block; padding: 22px 16px; border-top: 1px solid var(--line); }
   .studio-board { padding: 26px 16px 38px; }
   .studio-page-heading { align-items: flex-start; flex-direction: column; }

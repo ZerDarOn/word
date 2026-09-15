@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   documentTreeByKind,
   type CreativeProject,
@@ -8,6 +8,7 @@ import {
 } from "./creative_project_data";
 import { CreativeProjectNavigation } from "./creative_project_navigation";
 import { CreativeNarrativeView } from "./creative_narrative_views";
+import { CreativeDocumentEditor } from "./creative_document_editor";
 
 const outlineCards = [
   { index: "01", title: "无潮之夜", purpose: "建立城市规则与来信", status: "已完成" },
@@ -30,6 +31,26 @@ const versionItems = [
   { id: "v15", label: "第二章初稿", time: "7 月 27 日", note: "手动保存 · 可恢复", current: false },
 ];
 
+const openingDraft = "雨停以后，萨菲港的雾反而更重了。\n\n伊芙琳把那册发霉的值班记录推过桌面。名册上有一行被墨水反复涂抹，但纸张背面的压痕仍然留下了一个姓氏：斯诺森。\n\n“港务处从不删除名字，”她说，“除非那个人从来没有来过。”";
+
+interface StudioDocument {
+  id: string;
+  group: string;
+  title: string;
+  body: string;
+  updatedAt: string;
+}
+
+function createInitialDocuments(project: CreativeProject): StudioDocument[] {
+  return documentTreeByKind[project.kind].flatMap((group, groupIndex) => group.items.map((title, itemIndex) => ({
+    id: `${project.id}-${groupIndex}-${itemIndex}`,
+    group: group.group,
+    title,
+    body: groupIndex === 0 && itemIndex === 0 ? openingDraft : `## ${title}\n\n在这里开始记录内容。`,
+    updatedAt: groupIndex === 0 && itemIndex === 0 ? "刚刚" : "尚未编辑",
+  })));
+}
+
 interface CreativeProjectStudioProps {
   project: CreativeProject;
   onBack: () => void;
@@ -43,17 +64,65 @@ export function CreativeProjectStudio({
 }: CreativeProjectStudioProps) {
   const documentTree = documentTreeByKind[project.kind];
   const [activeView, setActiveView] = useState<CreativeStudioView>("项目总览");
-  const [activeDocument, setActiveDocument] = useState(documentTree[0].items[0]);
-  const [draft, setDraft] = useState(
-    "雨停以后，萨菲港的雾反而更重了。\n\n伊芙琳把那册发霉的值班记录推过桌面。名册上有一行被墨水反复涂抹，但纸张背面的压痕仍然留下了一个姓氏：斯诺森。\n\n“港务处从不删除名字，”她说，“除非那个人从来没有来过。”",
-  );
-  const [feedback, setFeedback] = useState("当前为前端演示，修改只保留在本页状态中。");
-  const [showMaterials, setShowMaterials] = useState(false);
+  const [documents, setDocuments] = useState<StudioDocument[]>(() => createInitialDocuments(project));
+  const [activeDocumentId, setActiveDocumentId] = useState(() => createInitialDocuments(project)[0].id);
+  const [documentQuery, setDocumentQuery] = useState("");
+  const [saveState, setSaveState] = useState<"已保存" | "保存中" | "尚未保存">("已保存");
+  const [storageReady, setStorageReady] = useState(false);
+  const [feedback, setFeedback] = useState("正文会自动保存到当前浏览器；AI 修改仍需逐项确认。");
   const [snapshotCount, setSnapshotCount] = useState(18);
-  const wordCount = useMemo(() => draft.replace(/\s/g, "").length, [draft]);
+  const storageKey = `lorecue-writing:${project.id}`;
+  const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
+  const visibleDocuments = useMemo(() => {
+    const normalized = documentQuery.trim().toLocaleLowerCase("zh-CN");
+    if (!normalized) return documents;
+    return documents.filter((document) => `${document.title} ${document.body}`.toLocaleLowerCase("zh-CN").includes(normalized));
+  }, [documentQuery, documents]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(storageKey);
+        if (stored) {
+          const restored = JSON.parse(stored) as StudioDocument[];
+          if (Array.isArray(restored) && restored.length > 0) {
+            setDocuments(restored);
+            setActiveDocumentId(restored[0].id);
+            setFeedback(`已从当前浏览器恢复 ${restored.length} 篇文档。`);
+          }
+        }
+      } catch {
+        setFeedback("浏览器中的写作草稿无法读取，当前使用项目初始内容。");
+      } finally {
+        setStorageReady(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    const statusTimer = window.setTimeout(() => setSaveState("保存中"), 0);
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(storageKey, JSON.stringify(documents));
+      setSaveState("已保存");
+      setFeedback("已自动保存到当前浏览器。");
+    }, 700);
+    return () => {
+      window.clearTimeout(statusTimer);
+      window.clearTimeout(timer);
+    };
+  }, [documents, storageKey, storageReady]);
+
+  function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body">>) {
+    setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, ...change, updatedAt: "刚刚" } : document));
+    setSaveState("尚未保存");
+  }
 
   function handleSaveDraft() {
-    setFeedback(`已模拟保存“${activeDocument}” · ${wordCount} 字。`);
+    window.localStorage.setItem(storageKey, JSON.stringify(documents));
+    setSaveState("已保存");
+    setFeedback(`已保存“${activeDocument.title}” · ${activeDocument.body.replace(/\s/g, "").length} 字。`);
   }
 
   function handleCreateSnapshot() {
@@ -61,10 +130,16 @@ export function CreativeProjectStudio({
     setFeedback(`已建立手动快照 ${snapshotCount + 1}，不会覆盖旧版本。`);
   }
 
-  function handleInsertMaterial(material: string) {
-    setDraft((current) => `${current}\n\n[引用素材：${material}]`);
-    setShowMaterials(false);
-    setFeedback(`已把“${material}”作为引用标记插入正文；原始素材仍保留在资料库。`);
+  function handleCreateDocument(group: string) {
+    let sequence = documents.length + 1;
+    while (documents.some((document) => document.id === `${project.id}-new-${sequence}`)) sequence += 1;
+    const id = `${project.id}-new-${sequence}`;
+    const next: StudioDocument = { id, group, title: "未命名文档", body: "", updatedAt: "刚刚" };
+    setDocuments((current) => [...current, next]);
+    setActiveDocumentId(id);
+    setActiveView("正文");
+    setSaveState("尚未保存");
+    setFeedback(`已在“${group}”中新建文档。`);
   }
 
   function renderStudioContent() {
@@ -152,38 +227,17 @@ export function CreativeProjectStudio({
       );
     }
 
-    return (
-      <section className="writing-canvas">
-        <header>
-          <div><span className="eyebrow">当前文档</span><h2>{activeDocument}</h2></div>
-          <div className="writing-actions">
-            <span>{wordCount} 字</span>
-            <div className="material-insert-wrap">
-              <button onClick={() => setShowMaterials((current) => !current)} aria-expanded={showMaterials}>插入素材</button>
-              {showMaterials && (
-                <div className="material-insert-menu">
-                  <strong>当前项目已引用</strong>
-                  {["伊芙琳 · 立绘", "萨菲港 · 码头地图", "码头 · 暗潮 BGM"].map((material) => (
-                    <button key={material} onClick={() => handleInsertMaterial(material)}>{material}</button>
-                  ))}
-                  <small>这里只插入引用，不复制原文件。</small>
-                </div>
-              )}
-            </div>
-            <button onClick={() => onAskAi(`帮我检查“${activeDocument}”的连续性`, project.title)}>询问 AI</button>
-            <button className="primary-action" onClick={handleSaveDraft}>保存草稿</button>
-          </div>
-        </header>
-        <label className="editor-title">
-          <span className="sr-only">文档标题</span>
-          <input value={activeDocument} onChange={(event) => setActiveDocument(event.target.value)} />
-        </label>
-        <label className="editor-body">
-          <span className="sr-only">正文内容</span>
-          <textarea value={draft} onChange={(event) => setDraft(event.target.value)} />
-        </label>
-      </section>
-    );
+    return <CreativeDocumentEditor
+      projectTitle={project.title}
+      documentTitle={activeDocument.title}
+      body={activeDocument.body}
+      saveState={saveState}
+      onChangeTitle={(title) => updateActiveDocument({ title })}
+      onChangeBody={(body) => updateActiveDocument({ body })}
+      onSave={handleSaveDraft}
+      onAskAi={(prompt) => onAskAi(prompt, project.title)}
+      onFeedback={setFeedback}
+    />;
   }
 
   return (
@@ -192,29 +246,26 @@ export function CreativeProjectStudio({
         <button className="text-back-button" onClick={onBack}>← 返回创作项目</button>
         <span className="eyebrow">{project.kind}</span>
         <h1>{project.title}</h1>
-        <CreativeProjectNavigation
-          activeView={activeView}
-          projectKind={project.kind}
-          onViewChange={setActiveView}
-        />
+        {activeView === "正文" ? (
+          <button className="document-project-switch" onClick={() => setActiveView("项目总览")}>⌂ 项目目录与设定</button>
+        ) : (
+          <CreativeProjectNavigation
+            activeView={activeView}
+            projectKind={project.kind}
+            onViewChange={setActiveView}
+          />
+        )}
         <div className="document-tree" hidden={activeView !== "正文"}>
-          {documentTree.map((group) => (
-            <section key={group.group}>
-              <div><strong>{group.group}</strong><button aria-label={`在${group.group}中新建`}>＋</button></div>
-              {group.items.map((item) => (
-                <button
-                  className={activeDocument === item ? "active" : ""}
-                  key={item}
-                  onClick={() => {
-                    setActiveDocument(item);
-                    setActiveView("正文");
-                  }}
-                >
-                  {item}
-                </button>
-              ))}
-            </section>
-          ))}
+          <label className="document-full-search"><span>全文搜索</span><input value={documentQuery} onChange={(event) => setDocumentQuery(event.target.value)} placeholder="标题或正文内容" /></label>
+          {documentTree.map((group) => {
+            const groupDocuments = visibleDocuments.filter((document) => document.group === group.group);
+            if (documentQuery && groupDocuments.length === 0) return null;
+            return <section key={group.group}>
+              <div><strong>{group.group}</strong><button aria-label={`在${group.group}中新建`} onClick={() => handleCreateDocument(group.group)}>＋</button></div>
+              {groupDocuments.map((document) => <button className={activeDocument.id === document.id ? "active" : ""} key={document.id} onClick={() => { setActiveDocumentId(document.id); setActiveView("正文"); }}><span>{document.title}</span><small>{document.updatedAt}</small></button>)}
+            </section>;
+          })}
+          {visibleDocuments.length === 0 && <p className="document-search-empty">没有找到匹配内容</p>}
         </div>
       </aside>
 
