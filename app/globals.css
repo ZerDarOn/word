@@ -814,10 +814,20 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .editor-mode-row nav button.active { color: var(--ink); font-weight: 800; background: var(--paper-deep); }
 .editor-mode-row label { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 8px; font-weight: 800; }
 .editor-mode-row select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-size: 8px; background: var(--panel); }
-.markdown-toolbar { position: sticky; z-index: 6; top: 0; display: grid; grid-template-columns: repeat(5, auto) 1fr auto auto; align-items: center; gap: 4px; padding: 7px; border-block: 1px solid var(--line); background: var(--paper); }
+.markdown-toolbar { position: sticky; z-index: 6; top: 0; display: grid; grid-template-columns: repeat(6, auto) 1fr auto auto; align-items: center; gap: 4px; padding: 7px; border-block: 1px solid var(--line); background: var(--paper); }
 .markdown-toolbar > button, .markdown-toolbar .material-insert-wrap > button { min-width: 31px; min-height: 29px; padding: 5px 8px; border: 1px solid transparent; border-radius: 4px; color: var(--muted); font-size: 8px; background: transparent; cursor: pointer; }
 .markdown-toolbar > button:hover, .markdown-toolbar .material-insert-wrap > button:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
 .markdown-toolbar .ai-review-button { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
+.markdown-toolbar > button.active { color: var(--ink); border-color: var(--line); background: var(--panel); }
+.find-replace-panel { display: grid; grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr) auto; align-items: end; gap: 8px; padding: 10px; border-bottom: 1px solid var(--line); background: var(--paper-deep); }
+.find-replace-panel label { display: grid; gap: 4px; color: var(--muted); font-size: 7px; font-weight: 800; }
+.find-replace-panel input, .find-replace-panel button { min-height: 31px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-size: 8px; background: var(--panel); }
+.find-replace-panel > span { align-self: center; color: var(--muted); font-size: 7px; white-space: nowrap; }
+.find-replace-panel button { font-weight: 800; cursor: pointer; }
+.find-replace-panel button:disabled { opacity: .45; cursor: not-allowed; }
+.writing-metadata-bar { display: grid; grid-template-columns: 90px repeat(3, minmax(100px, 1fr)); gap: 8px; margin-top: 11px; padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+.writing-metadata-bar label { display: grid; gap: 4px; color: var(--muted); font-size: 7px; font-weight: 800; }
+.writing-metadata-bar input, .writing-metadata-bar select { width: 100%; min-height: 29px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-size: 8px; background: var(--paper); }
 .enhanced-editor .editor-title, .enhanced-editor .editor-body, .markdown-preview { width: 100%; align-self: center; transition: width .2s ease; }
 .enhanced-editor .page-窄页 { width: min(620px, 100%); }
 .enhanced-editor .page-标准 { width: min(790px, 100%); }
@@ -2957,6 +2967,7 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .markdown-toolbar { display: flex; overflow-x: auto; }
   .markdown-toolbar > span { flex: 1 0 12px; }
   .markdown-toolbar > button, .markdown-toolbar .material-insert-wrap { flex: 0 0 auto; }
+  .find-replace-panel, .writing-metadata-bar { grid-template-columns: 1fr 1fr; }
   .editor-title input { margin-top: 28px; }
   .editor-body textarea { min-height: 420px; }
   .markdown-preview { min-height: 480px; padding: 28px 22px; }

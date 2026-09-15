@@ -544,6 +544,12 @@ test("provides a persistent long-form writing editor with reviewable AI changes"
   assert.match(documentEditor, /保留原文/);
   assert.match(documentEditor, /不会直接覆盖正文/);
   assert.match(documentEditor, /insertMarkup/);
+  assert.match(documentEditor, /查找替换/);
+  assert.match(documentEditor, /全部替换/);
+  assert.match(documentEditor, /场景元数据/);
+  assert.match(documentEditor, /故事时间/);
+  assert.match(documentEditor, /导出 \.md/);
+  assert.match(documentEditor, /createObjectURL/);
 });
 
 test("turns the writing inspector into outline, source, and private-note tools", async () => {

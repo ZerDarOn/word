@@ -8,7 +8,7 @@ import {
 } from "./creative_project_data";
 import { CreativeProjectNavigation } from "./creative_project_navigation";
 import { CreativeNarrativeView } from "./creative_narrative_views";
-import { CreativeDocumentEditor } from "./creative_document_editor";
+import { CreativeDocumentEditor, type WritingMetadata } from "./creative_document_editor";
 import { CreativeWritingInspector } from "./creative_writing_inspector";
 
 const outlineCards = [
@@ -41,6 +41,7 @@ interface StudioDocument {
   body: string;
   updatedAt: string;
   note?: string;
+  metadata?: WritingMetadata;
 }
 
 function createInitialDocuments(project: CreativeProject): StudioDocument[] {
@@ -50,6 +51,12 @@ function createInitialDocuments(project: CreativeProject): StudioDocument[] {
     title,
     body: groupIndex === 0 && itemIndex === 0 ? openingDraft : `## ${title}\n\n在这里开始记录内容。`,
     updatedAt: groupIndex === 0 && itemIndex === 0 ? "刚刚" : "尚未编辑",
+    metadata: {
+      status: "草稿",
+      pov: groupIndex === 0 && itemIndex === 0 ? "伊芙琳" : "",
+      location: groupIndex === 0 && itemIndex === 0 ? "萨菲港 · 港务处" : "",
+      timeline: groupIndex === 0 && itemIndex === 0 ? "雨停后的傍晚" : "",
+    },
   })));
 }
 
@@ -116,7 +123,7 @@ export function CreativeProjectStudio({
     };
   }, [documents, storageKey, storageReady]);
 
-  function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body" | "note">>) {
+  function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body" | "note" | "metadata">>) {
     setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, ...change, updatedAt: "刚刚" } : document));
     setSaveState("尚未保存");
   }
@@ -233,9 +240,11 @@ export function CreativeProjectStudio({
       projectTitle={project.title}
       documentTitle={activeDocument.title}
       body={activeDocument.body}
+      metadata={activeDocument.metadata ?? { status: "草稿", pov: "", location: "", timeline: "" }}
       saveState={saveState}
       onChangeTitle={(title) => updateActiveDocument({ title })}
       onChangeBody={(body) => updateActiveDocument({ body })}
+      onChangeMetadata={(metadata) => updateActiveDocument({ metadata })}
       onSave={handleSaveDraft}
       onAskAi={(prompt) => onAskAi(prompt, project.title)}
       onFeedback={setFeedback}

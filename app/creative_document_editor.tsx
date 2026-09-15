@@ -5,13 +5,22 @@ import { useMemo, useRef, useState } from "react";
 type EditorMode = "编辑" | "专注模式" | "阅读预览";
 type PageWidth = "窄页" | "标准" | "宽页";
 
+export interface WritingMetadata {
+  status: "草稿" | "修订中" | "定稿";
+  pov: string;
+  location: string;
+  timeline: string;
+}
+
 interface CreativeDocumentEditorProps {
   projectTitle: string;
   documentTitle: string;
   body: string;
+  metadata: WritingMetadata;
   saveState: "已保存" | "保存中" | "尚未保存";
   onChangeTitle: (title: string) => void;
   onChangeBody: (body: string) => void;
+  onChangeMetadata: (metadata: WritingMetadata) => void;
   onSave: () => void;
   onAskAi: (prompt: string) => void;
   onFeedback: (message: string) => void;
@@ -24,9 +33,11 @@ export function CreativeDocumentEditor({
   projectTitle,
   documentTitle,
   body,
+  metadata,
   saveState,
   onChangeTitle,
   onChangeBody,
+  onChangeMetadata,
   onSave,
   onAskAi,
   onFeedback,
@@ -35,9 +46,13 @@ export function CreativeDocumentEditor({
   const [pageWidth, setPageWidth] = useState<PageWidth>("标准");
   const [showMaterials, setShowMaterials] = useState(false);
   const [showAiDiff, setShowAiDiff] = useState(false);
+  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [findTerm, setFindTerm] = useState("");
+  const [replaceTerm, setReplaceTerm] = useState("");
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const wordCount = useMemo(() => body.replace(/\s/g, "").length, [body]);
   const paragraphs = useMemo(() => body.split(/\n{2,}/).filter(Boolean), [body]);
+  const matchCount = useMemo(() => findTerm ? body.split(findTerm).length - 1 : 0, [body, findTerm]);
 
   function insertMarkup(prefix: string, suffix = "", placeholder = "文字") {
     const textarea = editorRef.current;
@@ -70,11 +85,36 @@ export function CreativeDocumentEditor({
     onFeedback("已接受这一处 AI 修改；变更仍会进入自动保存与版本记录。");
   }
 
+  function replaceAllMatches() {
+    if (!findTerm) {
+      onFeedback("请先输入要查找的文字。");
+      return;
+    }
+    if (!matchCount) {
+      onFeedback(`当前文档没有找到“${findTerm}”。`);
+      return;
+    }
+    onChangeBody(body.split(findTerm).join(replaceTerm));
+    onFeedback(`已替换 ${matchCount} 处；修改仍可在保存前继续检查。`);
+  }
+
+  function exportMarkdown() {
+    const safeName = documentTitle.replace(/[\\/:*?"<>|]/g, "-") || "未命名文档";
+    const file = new Blob([`# ${documentTitle}\n\n${body}`], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(file);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${safeName}.md`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    onFeedback(`已导出“${safeName}.md”；浏览器草稿保持不变。`);
+  }
+
   return (
     <section className={`writing-canvas enhanced-editor ${mode === "专注模式" ? "focus-mode" : ""}`}>
       <header className="editor-command-bar">
         <div><span className="eyebrow">当前文档 · Markdown</span><h2>{documentTitle}</h2></div>
-        <div className="editor-status-cluster"><span className={`save-state state-${saveState}`}>{saveState}</span><span>{wordCount} 字</span><button className="primary-action" onClick={onSave}>立即保存</button></div>
+        <div className="editor-status-cluster"><span className={`save-state state-${saveState}`}>{saveState}</span><span>{wordCount} 字</span><button onClick={exportMarkdown}>导出 .md</button><button className="primary-action" onClick={onSave}>立即保存</button></div>
       </header>
 
       <div className="editor-mode-row">
@@ -88,10 +128,25 @@ export function CreativeDocumentEditor({
         <button onClick={() => insertMarkup("*", "*", "强调内容")}><i>I</i></button>
         <button onClick={() => insertMarkup("> ", "", "引用内容")}>引用</button>
         <button onClick={() => insertMarkup("— “", "”", "对白")}>对白</button>
+        <button className={showFindReplace ? "active" : ""} onClick={() => setShowFindReplace((current) => !current)}>查找替换</button>
         <span />
         <div className="material-insert-wrap"><button onClick={() => setShowMaterials((current) => !current)} aria-expanded={showMaterials}>插入素材</button>{showMaterials && <div className="material-insert-menu"><strong>当前项目已引用</strong>{["伊芙琳 · 立绘", "萨菲港 · 码头地图", "码头 · 暗潮 BGM"].map((material) => <button key={material} onClick={() => insertMaterial(material)}>{material}</button>)}<small>这里只插入引用，不复制原文件。</small></div>}</div>
         <button className="ai-review-button" onClick={() => setShowAiDiff(true)}>AI 修改预览</button>
       </div>}
+
+      {mode !== "阅读预览" && showFindReplace && <section className="find-replace-panel" aria-label="文内查找替换">
+        <label>查找<input value={findTerm} onChange={(event) => setFindTerm(event.target.value)} placeholder="输入原文" /></label>
+        <span>{findTerm ? `${matchCount} 处匹配` : "等待输入"}</span>
+        <label>替换为<input value={replaceTerm} onChange={(event) => setReplaceTerm(event.target.value)} placeholder="输入新文字" /></label>
+        <button onClick={replaceAllMatches} disabled={!findTerm || matchCount === 0}>全部替换</button>
+      </section>}
+
+      <section className="writing-metadata-bar" aria-label="场景元数据">
+        <label>状态<select value={metadata.status} onChange={(event) => onChangeMetadata({ ...metadata, status: event.target.value as WritingMetadata["status"] })}><option>草稿</option><option>修订中</option><option>定稿</option></select></label>
+        <label>视角<input value={metadata.pov} onChange={(event) => onChangeMetadata({ ...metadata, pov: event.target.value })} placeholder="人物 / 叙述视角" /></label>
+        <label>地点<input value={metadata.location} onChange={(event) => onChangeMetadata({ ...metadata, location: event.target.value })} placeholder="场景地点" /></label>
+        <label>故事时间<input value={metadata.timeline} onChange={(event) => onChangeMetadata({ ...metadata, timeline: event.target.value })} placeholder="日期 / 阶段" /></label>
+      </section>
 
       <label className={`editor-title page-${pageWidth}`}>
         <span className="sr-only">文档标题</span>
