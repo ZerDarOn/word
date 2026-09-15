@@ -545,3 +545,20 @@ test("provides a persistent long-form writing editor with reviewable AI changes"
   assert.match(documentEditor, /不会直接覆盖正文/);
   assert.match(documentEditor, /insertMarkup/);
 });
+
+test("turns the writing inspector into outline, source, and private-note tools", async () => {
+  const inspector = await readFile(new URL("../app/creative_writing_inspector.tsx", import.meta.url), "utf8");
+  const studio = await readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8");
+
+  assert.match(inspector, /当前文档大纲/);
+  assert.match(inspector, /Markdown 标题/);
+  assert.match(inspector, /规则检测/);
+  assert.match(inspector, /正文依据/);
+  assert.match(inspector, /设定依据/);
+  assert.match(inspector, /项目可引用资料/);
+  assert.match(inspector, /查看不等于写入正文/);
+  assert.match(inspector, /仅作者可见/);
+  assert.match(inspector, /备注不进入正文/);
+  assert.match(studio, /activeDocument\.note/);
+  assert.match(studio, /<CreativeWritingInspector/);
+});

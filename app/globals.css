@@ -709,6 +709,40 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .document-rail, .writing-inspector { padding: 24px 18px; background: var(--paper-deep); }
 .document-rail { border-inline-end: 1px solid var(--line); }
 .writing-inspector { border-inline-start: 1px solid var(--line); }
+.active-writing-inspector { display: flex; min-width: 0; flex-direction: column; gap: 17px; }
+.document-outline-panel { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.document-outline-panel > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.document-outline-panel > div small { color: var(--muted); font-size: 8px; }
+.document-outline-panel h2 { margin: 10px 0 8px; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
+.document-outline-panel > p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.document-outline-panel ol { display: grid; gap: 3px; margin: 10px 0 0; padding: 0; list-style: none; }
+.document-outline-panel li.level-2 { padding-inline-start: 10px; }
+.document-outline-panel li.level-3 { padding-inline-start: 20px; }
+.document-outline-panel li button { display: flex; align-items: center; justify-content: space-between; gap: 9px; width: 100%; min-height: 28px; padding: 4px 7px; border: 0; border-radius: 4px; color: var(--muted); font-size: 9px; text-align: left; background: transparent; cursor: pointer; }
+.document-outline-panel li button:hover { color: var(--ink); background: var(--panel); }
+.document-outline-panel li small { color: var(--muted); font-size: 7px; }
+.inspector-tab-content { display: grid; gap: 12px; }
+.inspector-summary.compact { padding-bottom: 4px; }
+.inspector-summary.compact h2 { font-size: 18px; }
+.issue-provenance { display: flex; flex-wrap: wrap; gap: 5px; }
+.issue-provenance span { padding: 3px 6px; border-radius: 999px; color: var(--muted); font-size: 7px; font-weight: 800; background: var(--paper-deep); }
+.continuity-issue dl { display: grid; gap: 5px; margin: 10px 0; padding-top: 9px; border-top: 1px solid var(--line); }
+.continuity-issue dl div { display: grid; grid-template-columns: 58px 1fr; gap: 7px; font-size: 8px; }
+.continuity-issue dt { color: var(--muted); }
+.continuity-issue dd { margin: 0; font-weight: 800; }
+.inspector-empty-state, .note-guidance { padding: 13px; border: 1px dashed var(--line); border-radius: 6px; background: var(--panel); }
+.inspector-empty-state strong, .note-guidance strong { font-size: 9px; }
+.inspector-empty-state p, .note-guidance p { margin: 6px 0 0; color: var(--muted); font-size: 8px; line-height: 1.6; }
+.reference-section { display: grid; gap: 6px; }
+.reference-section > p { margin: 4px 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.reference-section > button { display: grid; gap: 4px; width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); text-align: left; background: var(--panel); cursor: pointer; }
+.reference-section > button:hover { border-color: var(--accent); }
+.reference-section > button small, .reference-section > button span { color: var(--muted); font-size: 7px; }
+.reference-section > button strong { font-size: 9px; }
+.inspector-boundary-note { margin: 0; padding-top: 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; line-height: 1.6; }
+.document-note-field { display: grid; gap: 8px; }
+.document-note-field textarea { width: 100%; min-height: 220px; padding: 11px; resize: vertical; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: 10px/1.7 inherit; background: var(--panel); }
+.document-note-field textarea:focus { outline: 2px solid var(--blue-soft); border-color: var(--blue); }
 .text-back-button {
   min-height: 30px; margin-bottom: 24px; padding: 0; border: 0; color: var(--muted);
   font-size: 10px; background: transparent; cursor: pointer;

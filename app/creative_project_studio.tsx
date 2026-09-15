@@ -9,6 +9,7 @@ import {
 import { CreativeProjectNavigation } from "./creative_project_navigation";
 import { CreativeNarrativeView } from "./creative_narrative_views";
 import { CreativeDocumentEditor } from "./creative_document_editor";
+import { CreativeWritingInspector } from "./creative_writing_inspector";
 
 const outlineCards = [
   { index: "01", title: "无潮之夜", purpose: "建立城市规则与来信", status: "已完成" },
@@ -39,6 +40,7 @@ interface StudioDocument {
   title: string;
   body: string;
   updatedAt: string;
+  note?: string;
 }
 
 function createInitialDocuments(project: CreativeProject): StudioDocument[] {
@@ -114,7 +116,7 @@ export function CreativeProjectStudio({
     };
   }, [documents, storageKey, storageReady]);
 
-  function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body">>) {
+  function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body" | "note">>) {
     setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, ...change, updatedAt: "刚刚" } : document));
     setSaveState("尚未保存");
   }
@@ -278,7 +280,14 @@ export function CreativeProjectStudio({
         <p className="writing-feedback" aria-live="polite">{feedback}</p>
       </div>
 
-      <aside className="writing-inspector">
+      {activeView === "正文" ? <CreativeWritingInspector
+        documentTitle={activeDocument.title}
+        body={activeDocument.body}
+        note={activeDocument.note ?? ""}
+        onChangeNote={(note) => updateActiveDocument({ note })}
+        onAskAi={(prompt) => onAskAi(prompt, project.title)}
+        onFeedback={setFeedback}
+      /> : <aside className="writing-inspector">
         <div className="inspector-tabs"><button className="active">检查</button><button>引用</button><button>备注</button></div>
         <section className="inspector-summary">
           <span className="eyebrow">本项目提醒</span>
@@ -299,7 +308,7 @@ export function CreativeProjectStudio({
           <span className="eyebrow">内容去向</span><strong>{project.kind === "跑团模组" ? "模组不是团历史" : "创作项目彼此独立"}</strong>
           <p>{project.kind === "跑团模组" ? "完成模组后可建立多个团项目；口胡只进入对应团与场次。" : "跨项目资料必须明确引用，AI 不会自行混入其他故事。"}</p>
         </section>
-      </aside>
+      </aside>}
     </main>
   );
 }
