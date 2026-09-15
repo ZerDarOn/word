@@ -341,3 +341,163 @@ test("provides Windows and Python launchers that stop the full dev-server tree",
   assert.match(readme, /start_lorecue\.cmd/);
   assert.match(readme, /start_lorecue\.py/);
 });
+
+test("keeps NPC knowledge, belief, disclosure, and AI boundaries separate", async () => {
+  const [npcKnowledge, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_npc_knowledge_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(npcKnowledge, /NPC 知情总览/);
+  assert.match(npcKnowledge, /确定知道/);
+  assert.match(npcKnowledge, /误以为/);
+  assert.match(npcKnowledge, /愿意透露/);
+  assert.match(npcKnowledge, /披露条件/);
+  assert.match(npcKnowledge, /绝不知情/);
+  assert.match(npcKnowledge, /玩家已触发/);
+  assert.match(npcKnowledge, /AI 可用边界/);
+  assert.match(npcKnowledge, /回答模拟/);
+  assert.match(npcKnowledge, /全知风险检查/);
+  assert.match(npcKnowledge, /handleSaveKnowledge/);
+  assert.match(narrativeViews, /<CreativeNpcKnowledgeWorkbench/);
+});
+
+test("turns tabletop scenes into runnable nodes with failure-safe exits", async () => {
+  const [sceneWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_scene_node_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(sceneWorkbench, /场景运行总览/);
+  assert.match(sceneWorkbench, /进入方式/);
+  assert.match(sceneWorkbench, /场景目标/);
+  assert.match(sceneWorkbench, /玩家可见/);
+  assert.match(sceneWorkbench, /主持人隐藏/);
+  assert.match(sceneWorkbench, /检定与失败推进/);
+  assert.match(sceneWorkbench, /NPC 与披露/);
+  assert.match(sceneWorkbench, /出口与后果/);
+  assert.match(sceneWorkbench, /场景状态/);
+  assert.match(sceneWorkbench, /临场记录/);
+  assert.match(sceneWorkbench, /handleSaveScene/);
+  assert.match(narrativeViews, /<CreativeSceneNodeWorkbench/);
+});
+
+test("maintains a provenance-aware GM truth ledger", async () => {
+  const [truthWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_gm_truth_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(truthWorkbench, /真相总览/);
+  assert.match(truthWorkbench, /原文明确/);
+  assert.match(truthWorkbench, /合理推断/);
+  assert.match(truthWorkbench, /临场新编/);
+  assert.match(truthWorkbench, /尚未确认/);
+  assert.match(truthWorkbench, /事实来源/);
+  assert.match(truthWorkbench, /知识边界/);
+  assert.match(truthWorkbench, /公开时机/);
+  assert.match(truthWorkbench, /冲突与版本/);
+  assert.match(truthWorkbench, /设为正式设定/);
+  assert.match(truthWorkbench, /handleSaveTruth/);
+  assert.match(narrativeViews, /<CreativeGmTruthWorkbench/);
+});
+
+test("connects hierarchical maps to runnable tabletop encounters", async () => {
+  const [encounterWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_map_encounter_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(encounterWorkbench, /遭遇运行总览/);
+  assert.match(encounterWorkbench, /地图区域/);
+  assert.match(encounterWorkbench, /环境效果/);
+  assert.match(encounterWorkbench, /入口与出口/);
+  assert.match(encounterWorkbench, /参与单位/);
+  assert.match(encounterWorkbench, /非战斗解法/);
+  assert.match(encounterWorkbench, /探索时钟/);
+  assert.match(encounterWorkbench, /D&D 5e/);
+  assert.match(encounterWorkbench, /CoC 7e/);
+  assert.match(encounterWorkbench, /遭遇后状态/);
+  assert.match(encounterWorkbench, /handleSaveEncounter/);
+  assert.match(narrativeViews, /<CreativeMapEncounterWorkbench/);
+});
+
+test("tracks reachable endings, consequences, and future campaign carryover", async () => {
+  const [endingWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_ending_branch_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(endingWorkbench, /结局路径总览/);
+  assert.match(endingWorkbench, /触发条件/);
+  assert.match(endingWorkbench, /玩家选择/);
+  assert.match(endingWorkbench, /公开真相/);
+  assert.match(endingWorkbench, /人物后果/);
+  assert.match(endingWorkbench, /阵营后果/);
+  assert.match(endingWorkbench, /未解决事项/);
+  assert.match(endingWorkbench, /下一场承接/);
+  assert.match(endingWorkbench, /可达性检查/);
+  assert.match(endingWorkbench, /死分支/);
+  assert.match(endingWorkbench, /handleSaveEnding/);
+  assert.match(narrativeViews, /<CreativeEndingBranchWorkbench/);
+});
+
+test("builds spoiler-safe player handbooks with conditional releases", async () => {
+  const [handbookWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_player_handbook_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(handbookWorkbench, /玩家手册总览/);
+  assert.match(handbookWorkbench, /开场公开/);
+  assert.match(handbookWorkbench, /条件公开/);
+  assert.match(handbookWorkbench, /玩家视角预览/);
+  assert.match(handbookWorkbench, /公开条件/);
+  assert.match(handbookWorkbench, /剧透检查/);
+  assert.match(handbookWorkbench, /主持人隐藏/);
+  assert.match(handbookWorkbench, /按玩家分发/);
+  assert.match(handbookWorkbench, /撤回与修订/);
+  assert.match(handbookWorkbench, /导出包/);
+  assert.match(handbookWorkbench, /handleSaveHandout/);
+  assert.match(narrativeViews, /<CreativePlayerHandbookWorkbench/);
+});
+
+test("provides manually triggered scene audio cues without conversation monitoring", async () => {
+  const [audioWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_audio_cue_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(audioWorkbench, /BGM 与音效总览/);
+  assert.match(audioWorkbench, /手动触发/);
+  assert.match(audioWorkbench, /不会监听对话/);
+  assert.match(audioWorkbench, /场景提示点/);
+  assert.match(audioWorkbench, /循环区间/);
+  assert.match(audioWorkbench, /淡入淡出/);
+  assert.match(audioWorkbench, /音效层/);
+  assert.match(audioWorkbench, /备用曲目/);
+  assert.match(audioWorkbench, /玩家端名称/);
+  assert.match(audioWorkbench, /播放队列/);
+  assert.match(audioWorkbench, /handleSaveAudioCue/);
+  assert.match(narrativeViews, /<CreativeAudioCueWorkbench/);
+});
+
+test("manages player attachments as spoiler-safe session handouts", async () => {
+  const [attachmentWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_player_attachment_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(attachmentWorkbench, /玩家附件总览/);
+  assert.match(attachmentWorkbench, /主持人原件/);
+  assert.match(attachmentWorkbench, /玩家版本/);
+  assert.match(attachmentWorkbench, /公开条件/);
+  assert.match(attachmentWorkbench, /剧透遮罩/);
+  assert.match(attachmentWorkbench, /发放记录/);
+  assert.match(attachmentWorkbench, /按玩家发放/);
+  assert.match(attachmentWorkbench, /撤回不会抹除/);
+  assert.match(attachmentWorkbench, /来源引用/);
+  assert.match(attachmentWorkbench, /预览玩家所见/);
+  assert.match(attachmentWorkbench, /handleSaveAttachment/);
+  assert.match(narrativeViews, /<CreativePlayerAttachmentWorkbench/);
+});

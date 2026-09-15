@@ -5,11 +5,19 @@ import type {
   CreativeStudioView,
 } from "./creative_project_data";
 import { CreativeCharacterDossier } from "./creative_character_dossier";
+import { CreativeAudioCueWorkbench } from "./creative_audio_cue_workbench";
 import { CreativeClueItemWorkbench } from "./creative_clue_item_workbench";
 import { CreativeClueNetworkWorkbench } from "./creative_clue_network_workbench";
+import { CreativeEndingBranchWorkbench } from "./creative_ending_branch_workbench";
 import { CreativeForeshadowingWorkbench } from "./creative_foreshadowing_workbench";
+import { CreativeGmTruthWorkbench } from "./creative_gm_truth_workbench";
 import { CreativeMapHierarchy } from "./creative_map_hierarchy";
+import { CreativeMapEncounterWorkbench } from "./creative_map_encounter_workbench";
+import { CreativeNpcKnowledgeWorkbench } from "./creative_npc_knowledge_workbench";
+import { CreativePlayerAttachmentWorkbench } from "./creative_player_attachment_workbench";
 import { CreativeOrganizationWorkbench } from "./creative_organization_workbench";
+import { CreativePlayerHandbookWorkbench } from "./creative_player_handbook_workbench";
+import { CreativeSceneNodeWorkbench } from "./creative_scene_node_workbench";
 import { CreativeWorldbuildingWorkbench } from "./creative_worldbuilding_workbench";
 
 interface CreativeNarrativeViewProps {
@@ -365,6 +373,30 @@ export function CreativeNarrativeView({
   }
   if (view === "线索网络") {
     return <CreativeClueNetworkWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "NPC 知情与披露") {
+    return <CreativeNpcKnowledgeWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "场景节点") {
+    return <CreativeSceneNodeWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "主持人真相") {
+    return <CreativeGmTruthWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "地图与遭遇") {
+    return <CreativeMapEncounterWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "结局分支") {
+    return <CreativeEndingBranchWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "玩家手册") {
+    return <CreativePlayerHandbookWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "BGM 音效") {
+    return <CreativeAudioCueWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "玩家附件") {
+    return <CreativePlayerAttachmentWorkbench project={project} onFeedback={onFeedback} />;
   }
   if (view === "世界观") {
     return <CreativeWorldbuildingWorkbench project={project} onFeedback={onFeedback} />;
