@@ -568,3 +568,16 @@ test("turns the writing inspector into outline, source, and private-note tools",
   assert.match(studio, /activeDocument\.note/);
   assert.match(studio, /<CreativeWritingInspector/);
 });
+
+test("manages large document sets with recoverable archiving and project backups", async () => {
+  const studio = await readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8");
+
+  assert.match(studio, /handleDuplicateDocument/);
+  assert.match(studio, /handleMoveDocument/);
+  assert.match(studio, /handleArchiveDocument/);
+  assert.match(studio, /handleUndoArchive/);
+  assert.match(studio, /查看归档/);
+  assert.match(studio, /lorecue-writing-backup/);
+  assert.match(studio, /LoreCue备份\.json/);
+  assert.match(studio, /原文档没有变化/);
+});

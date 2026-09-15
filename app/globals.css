@@ -759,6 +759,14 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .document-full-search { display: grid; gap: 5px; }
 .document-full-search span { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; }
 .document-full-search input { width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-size: 9px; background: var(--panel); }
+.document-management-panel { display: grid; gap: 7px; padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+.document-management-panel > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.document-management-panel button, .archive-controls button { min-height: 27px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 7px; font-weight: 800; background: var(--paper); cursor: pointer; }
+.document-management-panel button:hover, .archive-controls button:hover { color: var(--accent); border-color: var(--accent); }
+.document-management-panel label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 7px; color: var(--muted); font-size: 7px; font-weight: 800; }
+.document-management-panel select { min-width: 0; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-size: 7px; background: var(--paper); }
+.archive-controls { display: flex; gap: 5px; }
+.archive-controls button { flex: 1; background: var(--panel); }
 .document-search-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); font-size: 9px; text-align: center; }
 .document-tree section > div { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
 .document-tree section > div strong { color: var(--muted); font-size: 9px; letter-spacing: 0.12em; }
@@ -773,6 +781,7 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   color: var(--ink); background: var(--panel);
 }
 .document-tree section > button.active { border-inline-start: 2px solid var(--accent); font-weight: 800; }
+.document-tree section > button.archived { opacity: .62; text-decoration: line-through; }
 .document-tree section > button span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .document-tree section > button small { display: block; margin-top: 3px; color: var(--muted); font-size: 7px; font-weight: 400; }
 .writing-canvas {

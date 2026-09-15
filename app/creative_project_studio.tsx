@@ -42,6 +42,7 @@ interface StudioDocument {
   updatedAt: string;
   note?: string;
   metadata?: WritingMetadata;
+  archived?: boolean;
 }
 
 function createInitialDocuments(project: CreativeProject): StudioDocument[] {
@@ -76,17 +77,19 @@ export function CreativeProjectStudio({
   const [documents, setDocuments] = useState<StudioDocument[]>(() => createInitialDocuments(project));
   const [activeDocumentId, setActiveDocumentId] = useState(() => createInitialDocuments(project)[0].id);
   const [documentQuery, setDocumentQuery] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [lastArchivedId, setLastArchivedId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"已保存" | "保存中" | "尚未保存">("已保存");
   const [storageReady, setStorageReady] = useState(false);
   const [feedback, setFeedback] = useState("正文会自动保存到当前浏览器；AI 修改仍需逐项确认。");
   const [snapshotCount, setSnapshotCount] = useState(18);
   const storageKey = `lorecue-writing:${project.id}`;
   const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
+  const archivedCount = documents.filter((document) => document.archived).length;
   const visibleDocuments = useMemo(() => {
     const normalized = documentQuery.trim().toLocaleLowerCase("zh-CN");
-    if (!normalized) return documents;
-    return documents.filter((document) => `${document.title} ${document.body}`.toLocaleLowerCase("zh-CN").includes(normalized));
-  }, [documentQuery, documents]);
+    return documents.filter((document) => (showArchived || !document.archived) && (!normalized || `${document.title} ${document.body}`.toLocaleLowerCase("zh-CN").includes(normalized)));
+  }, [documentQuery, documents, showArchived]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -96,7 +99,7 @@ export function CreativeProjectStudio({
           const restored = JSON.parse(stored) as StudioDocument[];
           if (Array.isArray(restored) && restored.length > 0) {
             setDocuments(restored);
-            setActiveDocumentId(restored[0].id);
+            setActiveDocumentId(restored.find((document) => !document.archived)?.id ?? restored[0].id);
             setFeedback(`已从当前浏览器恢复 ${restored.length} 篇文档。`);
           }
         }
@@ -143,12 +146,64 @@ export function CreativeProjectStudio({
     let sequence = documents.length + 1;
     while (documents.some((document) => document.id === `${project.id}-new-${sequence}`)) sequence += 1;
     const id = `${project.id}-new-${sequence}`;
-    const next: StudioDocument = { id, group, title: "未命名文档", body: "", updatedAt: "刚刚" };
+    const next: StudioDocument = { id, group, title: "未命名文档", body: "", updatedAt: "刚刚", metadata: { status: "草稿", pov: "", location: "", timeline: "" } };
     setDocuments((current) => [...current, next]);
     setActiveDocumentId(id);
     setActiveView("正文");
     setSaveState("尚未保存");
     setFeedback(`已在“${group}”中新建文档。`);
+  }
+
+  function handleDuplicateDocument() {
+    let sequence = documents.length + 1;
+    while (documents.some((document) => document.id === `${project.id}-copy-${sequence}`)) sequence += 1;
+    const copy: StudioDocument = {
+      ...activeDocument,
+      id: `${project.id}-copy-${sequence}`,
+      title: `${activeDocument.title} · 副本`,
+      updatedAt: "刚刚",
+      archived: false,
+    };
+    setDocuments((current) => [...current, copy]);
+    setActiveDocumentId(copy.id);
+    setSaveState("尚未保存");
+    setFeedback(`已复制“${activeDocument.title}”，原文档没有变化。`);
+  }
+
+  function handleMoveDocument(group: string) {
+    setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, group, updatedAt: "刚刚" } : document));
+    setSaveState("尚未保存");
+    setFeedback(`已将“${activeDocument.title}”移动到“${group}”。`);
+  }
+
+  function handleArchiveDocument() {
+    const nextDocument = documents.find((document) => document.id !== activeDocument.id && !document.archived);
+    setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, archived: true, updatedAt: "刚刚" } : document));
+    setLastArchivedId(activeDocument.id);
+    if (nextDocument) setActiveDocumentId(nextDocument.id);
+    setSaveState("尚未保存");
+    setFeedback(`已归档“${activeDocument.title}”，可在左栏撤销或查看归档。`);
+  }
+
+  function handleUndoArchive() {
+    if (!lastArchivedId) return;
+    setDocuments((current) => current.map((document) => document.id === lastArchivedId ? { ...document, archived: false, updatedAt: "刚刚" } : document));
+    setActiveDocumentId(lastArchivedId);
+    setLastArchivedId(null);
+    setSaveState("尚未保存");
+    setFeedback("已撤销上一次归档。");
+  }
+
+  function handleExportProjectBackup() {
+    const backup = { format: "lorecue-writing-backup", version: 1, project: { id: project.id, title: project.title, kind: project.kind }, exportedAt: new Date().toISOString(), documents };
+    const file = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(file);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${project.title.replace(/[\\/:*?"<>|]/g, "-")}-LoreCue备份.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setFeedback(`已导出 ${documents.length} 篇文档的项目备份。`);
   }
 
   function renderStudioContent() {
@@ -268,12 +323,17 @@ export function CreativeProjectStudio({
         )}
         <div className="document-tree" hidden={activeView !== "正文"}>
           <label className="document-full-search"><span>全文搜索</span><input value={documentQuery} onChange={(event) => setDocumentQuery(event.target.value)} placeholder="标题或正文内容" /></label>
+          <div className="document-management-panel">
+            <div><button onClick={handleDuplicateDocument}>复制</button><button onClick={handleArchiveDocument}>归档</button><button onClick={handleExportProjectBackup}>备份</button></div>
+            <label>移动到<select value={activeDocument.group} onChange={(event) => handleMoveDocument(event.target.value)}>{documentTree.map((group) => <option key={group.group}>{group.group}</option>)}</select></label>
+          </div>
+          {(archivedCount > 0 || lastArchivedId) && <div className="archive-controls"><button onClick={() => setShowArchived((current) => !current)}>{showArchived ? "隐藏归档" : `查看归档 ${archivedCount}`}</button>{lastArchivedId && <button onClick={handleUndoArchive}>撤销归档</button>}</div>}
           {documentTree.map((group) => {
             const groupDocuments = visibleDocuments.filter((document) => document.group === group.group);
             if (documentQuery && groupDocuments.length === 0) return null;
             return <section key={group.group}>
               <div><strong>{group.group}</strong><button aria-label={`在${group.group}中新建`} onClick={() => handleCreateDocument(group.group)}>＋</button></div>
-              {groupDocuments.map((document) => <button className={activeDocument.id === document.id ? "active" : ""} key={document.id} onClick={() => { setActiveDocumentId(document.id); setActiveView("正文"); }}><span>{document.title}</span><small>{document.updatedAt}</small></button>)}
+              {groupDocuments.map((document) => <button className={`${activeDocument.id === document.id ? "active" : ""}${document.archived ? " archived" : ""}`} key={document.id} onClick={() => { setActiveDocumentId(document.id); setActiveView("正文"); }}><span>{document.title}</span><small>{document.archived ? "已归档" : document.updatedAt}</small></button>)}
             </section>;
           })}
           {visibleDocuments.length === 0 && <p className="document-search-empty">没有找到匹配内容</p>}
