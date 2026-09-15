@@ -501,3 +501,23 @@ test("manages player attachments as spoiler-safe session handouts", async () => 
   assert.match(attachmentWorkbench, /handleSaveAttachment/);
   assert.match(narrativeViews, /<CreativePlayerAttachmentWorkbench/);
 });
+
+test("organizes character portraits by identity, state, and asset provenance", async () => {
+  const [portraitWorkbench, narrativeViews] = await Promise.all([
+    readFile(new URL("../app/creative_portrait_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(portraitWorkbench, /角色立绘总览/);
+  assert.match(portraitWorkbench, /身份版本/);
+  assert.match(portraitWorkbench, /表情与状态/);
+  assert.match(portraitWorkbench, /服装与伤势/);
+  assert.match(portraitWorkbench, /玩家可见名称/);
+  assert.match(portraitWorkbench, /登场预览/);
+  assert.match(portraitWorkbench, /裁切安全区/);
+  assert.match(portraitWorkbench, /素材来源/);
+  assert.match(portraitWorkbench, /AI 候选图/);
+  assert.match(portraitWorkbench, /不会自动替换/);
+  assert.match(portraitWorkbench, /handleSavePortrait/);
+  assert.match(narrativeViews, /<CreativePortraitWorkbench/);
+});

@@ -15,6 +15,7 @@ import { CreativeMapHierarchy } from "./creative_map_hierarchy";
 import { CreativeMapEncounterWorkbench } from "./creative_map_encounter_workbench";
 import { CreativeNpcKnowledgeWorkbench } from "./creative_npc_knowledge_workbench";
 import { CreativePlayerAttachmentWorkbench } from "./creative_player_attachment_workbench";
+import { CreativePortraitWorkbench } from "./creative_portrait_workbench";
 import { CreativeOrganizationWorkbench } from "./creative_organization_workbench";
 import { CreativePlayerHandbookWorkbench } from "./creative_player_handbook_workbench";
 import { CreativeSceneNodeWorkbench } from "./creative_scene_node_workbench";
@@ -397,6 +398,9 @@ export function CreativeNarrativeView({
   }
   if (view === "玩家附件") {
     return <CreativePlayerAttachmentWorkbench project={project} onFeedback={onFeedback} />;
+  }
+  if (view === "角色立绘") {
+    return <CreativePortraitWorkbench project={project} onFeedback={onFeedback} />;
   }
   if (view === "世界观") {
     return <CreativeWorldbuildingWorkbench project={project} onFeedback={onFeedback} />;

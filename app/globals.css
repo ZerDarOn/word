@@ -2668,6 +2668,115 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .attachment-delivery-log > aside strong { color: var(--accent-dark); font-size: 8px; }
 .attachment-delivery-log > aside p { margin: 5px 0 0; color: var(--muted); font-size: 7px; line-height: 1.55; }
 
+.portrait-policy-banner { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; padding: 10px 13px; border: 1px solid var(--blue); border-inline-start-width: 4px; border-radius: 7px; background: var(--blue-soft); }
+.portrait-policy-banner strong { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; color: var(--blue); font-size: 7px; background: var(--panel); }
+.portrait-policy-banner span { color: var(--ink); font-size: 8px; line-height: 1.5; }
+.portrait-metrics { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 11px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.portrait-metrics article { padding: 12px 14px; border-inline-end: 1px solid var(--line); }
+.portrait-metrics article:last-child { border-inline-end: 0; }
+.portrait-metrics article.risk { background: var(--accent-soft); }
+.portrait-metrics strong { margin-inline-end: 7px; font-family: Georgia, serif; font-size: 20px; }
+.portrait-metrics span { font-size: 8px; font-weight: 800; }
+.portrait-metrics small { display: block; margin-top: 4px; color: var(--muted); font-size: 7px; }
+.portrait-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 10px; }
+.portrait-index, .portrait-editor { align-self: start; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.portrait-index > header { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--line); }
+.portrait-index > header strong { font-size: 9px; }
+.portrait-index > header small { color: var(--muted); font-size: 7px; }
+.portrait-index nav { display: grid; gap: 2px; padding: 6px; }
+.portrait-index nav button { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 65px; padding: 8px; border: 1px solid transparent; border-radius: 5px; text-align: left; background: transparent; cursor: pointer; }
+.portrait-index nav button:hover, .portrait-index nav button.active { border-color: var(--line); background: var(--paper); }
+.portrait-index nav button.active { border-inline-start: 3px solid var(--accent); }
+.portrait-index nav button > i { display: grid; width: 32px; height: 40px; border-radius: 50% 50% 42% 42%; place-items: center; color: white; font-family: Georgia, serif; font-size: 14px; font-style: normal; }
+.portrait-index nav button > span { display: grid; gap: 3px; min-width: 0; }
+.portrait-index nav strong { font-size: 9px; }
+.portrait-index nav small { overflow: hidden; color: var(--muted); font-size: 6px; text-overflow: ellipsis; white-space: nowrap; }
+.portrait-index nav em { grid-column: 2; justify-self: start; padding: 3px 5px; border-radius: 999px; color: var(--forest); font-size: 6px; font-style: normal; font-weight: 800; background: var(--forest-soft); }
+.portrait-index nav em[data-state="待确认"] { color: var(--amber); background: var(--amber-soft); }
+.portrait-index nav em[data-state="缺少版本"] { color: var(--accent-dark); background: var(--accent-soft); }
+.portrait-index nav b { position: absolute; top: 7px; right: 7px; color: var(--muted); font-family: Georgia, serif; font-size: 6px; }
+.portrait-stage-card { margin: 6px; padding: 11px; border-top: 3px solid var(--forest); border-radius: 5px; background: var(--forest-soft); }
+.portrait-stage-card span { color: var(--forest); font-size: 6px; font-weight: 800; }
+.portrait-stage-card strong { display: block; margin: 5px 0; font-size: 9px; }
+.portrait-stage-card p { margin: 0 0 8px; color: var(--muted); font-size: 7px; }
+.portrait-stage-card button, .portrait-state-panel button, .portrait-stage-preview button, .portrait-provenance button, .portrait-identity-warning button { min-height: 29px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--blue); font-size: 7px; font-weight: 800; background: var(--panel); cursor: pointer; }
+.portrait-editor > header { position: relative; padding: 15px 135px 14px 16px; border-bottom: 1px solid var(--line); background: var(--paper-deep); }
+.portrait-editor > header span { color: var(--accent); font-size: 7px; font-weight: 800; }
+.portrait-editor > header h3 { margin: 5px 0 4px; font-family: Georgia, "Songti SC", serif; font-size: 17px; }
+.portrait-editor > header p { margin: 0; color: var(--muted); font-size: 7px; }
+.portrait-editor > header > button { position: absolute; top: 17px; right: 16px; min-height: 32px; padding: 6px 10px; border: 1px solid var(--accent); border-radius: 5px; color: white; font-size: 8px; font-weight: 800; background: var(--accent); cursor: pointer; }
+.portrait-overview, .portrait-state-panel, .portrait-stage-preview, .portrait-provenance { padding: 14px; }
+.portrait-hero-card { display: grid; grid-template-columns: minmax(175px, .72fr) minmax(280px, 1.28fr); gap: 18px; padding: 17px; border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 7px; background: var(--paper); }
+.portrait-figure { --portrait-tone: var(--blue); position: relative; display: grid; min-height: 310px; overflow: hidden; border: 1px solid var(--line); border-radius: 80px 80px 9px 9px; place-items: end center; background: linear-gradient(165deg, var(--paper-deep), var(--panel)); }
+.portrait-figure::before { position: absolute; top: 16px; width: 78%; height: 78%; border: 1px dashed var(--line); border-radius: 60px 60px 7px 7px; content: ""; }
+.portrait-head { position: absolute; top: 50px; z-index: 2; width: 74px; height: 90px; border-radius: 48% 48% 45% 45%; background: var(--portrait-tone); box-shadow: 0 -12px 0 3px var(--ink); }
+.portrait-head i, .portrait-head span { position: absolute; top: 48px; width: 7px; height: 2px; background: var(--panel); }
+.portrait-head i { left: 20px; }
+.portrait-head span { right: 20px; }
+.portrait-body { position: absolute; bottom: 0; width: 76%; height: 58%; border-radius: 44% 44% 7px 7px; background: var(--portrait-tone); }
+.portrait-body::before { position: absolute; top: 0; left: 50%; width: 24%; height: 100%; border-inline: 1px solid var(--panel); content: ""; transform: translateX(-50%); }
+.portrait-body i { position: absolute; top: 38px; width: 27%; height: 1px; background: var(--panel); }
+.portrait-body i:first-child { left: 8px; transform: rotate(19deg); }
+.portrait-body i:last-child { right: 8px; transform: rotate(-19deg); }
+.portrait-figure > em { z-index: 3; margin-bottom: 9px; padding: 4px 8px; border-radius: 999px; color: var(--ink); font-size: 7px; font-style: normal; font-weight: 800; background: var(--panel); }
+.portrait-figure.compact { width: 76px; min-height: 96px; border-radius: 38px 38px 5px 5px; }
+.portrait-figure.compact::before, .portrait-figure.compact > em { display: none; }
+.portrait-figure.compact .portrait-head { top: 17px; width: 30px; height: 37px; box-shadow: 0 -5px 0 1px var(--ink); }
+.portrait-figure.compact .portrait-head i, .portrait-figure.compact .portrait-head span { top: 19px; width: 3px; }
+.portrait-figure.compact .portrait-head i { left: 8px; }
+.portrait-figure.compact .portrait-head span { right: 8px; }
+.portrait-figure.compact .portrait-body { height: 53%; }
+.portrait-hero-card > div:last-child > span { color: var(--accent); font-size: 7px; font-weight: 800; }
+.portrait-hero-card h4 { margin: 8px 0 5px; font-family: Georgia, "Songti SC", serif; font-size: 20px; }
+.portrait-hero-card > div:last-child > p { color: var(--muted); font-size: 8px; }
+.portrait-hero-card dl { margin: 12px 0; }
+.portrait-hero-card dl div { padding: 8px 0; border-top: 1px solid var(--line); }
+.portrait-hero-card dt { color: var(--muted); font-size: 6px; font-weight: 800; }
+.portrait-hero-card dd { margin: 4px 0 0; font-size: 7px; line-height: 1.45; }
+.portrait-quick-states { display: flex; flex-wrap: wrap; gap: 5px; }
+.portrait-quick-states button { padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 7px; background: var(--panel); cursor: pointer; }
+.portrait-quick-states button.active { color: var(--accent-dark); border-color: var(--accent); background: var(--accent-soft); }
+.portrait-present-button { margin-top: 10px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 5px; color: white; font-size: 8px; font-weight: 800; background: var(--accent); cursor: pointer; }
+.portrait-version-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
+.portrait-version-strip article { padding: 11px; border: 1px solid var(--line); border-inline-start: 3px solid var(--forest); border-radius: 6px; background: var(--panel); }
+.portrait-version-strip article:nth-child(2) { border-inline-start-color: var(--blue); }
+.portrait-version-strip article:nth-child(3) { border-inline-start-color: var(--amber); }
+.portrait-version-strip span { color: var(--forest); font-size: 7px; font-weight: 800; }
+.portrait-version-strip strong { display: block; margin: 5px 0; font-size: 8px; }
+.portrait-version-strip p { margin: 0; color: var(--muted); font-size: 7px; line-height: 1.45; }
+.portrait-identity-form { padding: 14px; }
+.portrait-identity-warning { grid-column: 1 / -1; position: relative; padding: 11px 110px 11px 12px; border-inline-start: 3px solid var(--amber); border-radius: 5px; background: var(--amber-soft); }
+.portrait-identity-warning strong { color: var(--amber); font-size: 8px; }
+.portrait-identity-warning p { margin: 5px 0 0; color: var(--muted); font-size: 7px; }
+.portrait-identity-warning button { position: absolute; top: 12px; right: 12px; }
+.portrait-state-panel > header, .portrait-stage-preview > header, .portrait-provenance > header { padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-deep); }
+.portrait-state-panel > header strong, .portrait-stage-preview > header strong, .portrait-provenance > header strong { font-size: 9px; }
+.portrait-state-panel > header p, .portrait-stage-preview > header p, .portrait-provenance > header p { margin: 4px 0 0; color: var(--muted); font-size: 7px; }
+.portrait-state-panel > section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
+.portrait-state-panel article { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); }
+.portrait-state-panel article span { color: var(--blue); font-size: 6px; font-weight: 800; }
+.portrait-state-panel article strong { display: block; margin: 4px 0; font-size: 9px; }
+.portrait-state-panel article p { margin: 0; color: var(--muted); font-size: 7px; }
+.portrait-state-panel article button { grid-column: 2; justify-self: start; }
+.portrait-state-panel > button { margin-top: 9px; }
+.portrait-stage-preview > section { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 9px; }
+.portrait-stage-preview article { display: grid; justify-items: center; padding: 16px; border: 1px solid var(--line); border-radius: 7px; text-align: center; background: var(--paper); }
+.portrait-stage-preview article > span { justify-self: start; color: var(--forest); font-size: 7px; font-weight: 800; }
+.stage-player-card .portrait-figure { width: 175px; min-height: 250px; margin: 9px auto; }
+.portrait-stage-preview h4 { margin: 7px 0; font-family: Georgia, "Songti SC", serif; font-size: 15px; }
+.portrait-stage-preview article p { margin: 4px 0 0; color: var(--muted); font-size: 7px; }
+.stage-crop-card > div { display: grid; width: 120px; height: 120px; margin: 28px auto 18px; overflow: hidden; border: 2px solid var(--forest); border-radius: 50%; place-items: center; background: var(--panel); }
+.portrait-stage-preview > aside, .portrait-provenance > aside { margin-top: 9px; padding: 12px; border-inline-start: 3px solid var(--blue); border-radius: 5px; background: var(--blue-soft); }
+.portrait-stage-preview > aside strong, .portrait-provenance > aside strong { color: var(--blue); font-size: 8px; }
+.portrait-stage-preview > aside p, .portrait-provenance > aside p { margin: 5px 0 8px; color: var(--muted); font-size: 7px; line-height: 1.5; }
+.portrait-provenance > section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
+.portrait-provenance article { padding: 12px; border: 1px solid var(--line); border-top: 3px solid var(--forest); border-radius: 6px; background: var(--paper); }
+.portrait-provenance article span { color: var(--forest); font-size: 7px; font-weight: 800; }
+.portrait-provenance article strong { display: block; margin: 6px 0; font-size: 8px; }
+.portrait-provenance article p { margin: 0; color: var(--muted); font-size: 7px; line-height: 1.5; }
+.portrait-provenance > aside.candidate { border-inline-start-color: var(--amber); background: var(--amber-soft); }
+.portrait-provenance > aside.candidate strong { color: var(--amber); }
+
 @media (max-width: 1180px) {
   .topbar { grid-template-columns: auto 1fr auto; }
   .session-state { display: none; }
@@ -2768,7 +2877,7 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .map-detail-panel > section { border-inline-end: 0; }
   .map-detail-panel .map-save-button, .map-detail-panel .map-system-note { grid-column: auto; }
   .illustrated-map { min-height: 320px; }
-  .organization-layout, .clue-workbench-layout, .worldbuilding-layout, .foreshadowing-layout, .clue-network-layout, .npc-knowledge-layout, .scene-node-layout, .truth-layout, .encounter-layout, .ending-layout, .handbook-layout, .audio-layout, .attachment-layout { grid-template-columns: 1fr; }
+  .organization-layout, .clue-workbench-layout, .worldbuilding-layout, .foreshadowing-layout, .clue-network-layout, .npc-knowledge-layout, .scene-node-layout, .truth-layout, .encounter-layout, .ending-layout, .handbook-layout, .audio-layout, .attachment-layout, .portrait-layout { grid-template-columns: 1fr; }
   .organization-tree nav, .clue-item-index nav, .world-tree-panel nav {
     display: flex; overflow-x: auto; padding-bottom: 8px;
   }
@@ -2908,6 +3017,19 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .attachment-mask-check { grid-column: 1; align-items: flex-start; flex-direction: column; }
   .attachment-release article, .attachment-delivery-log article { grid-template-columns: 82px minmax(0, 1fr); }
   .attachment-release article button, .attachment-delivery-log article em, .attachment-delivery-log article button { grid-column: 2; justify-self: start; }
+  .portrait-policy-banner { align-items: flex-start; flex-direction: column; }
+  .portrait-metrics { grid-template-columns: repeat(2, 1fr); }
+  .portrait-metrics article:nth-child(2) { border-inline-end: 0; }
+  .portrait-metrics article:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
+  .portrait-index nav { display: flex; overflow-x: auto; padding-bottom: 8px; }
+  .portrait-index nav button { flex: 0 0 185px; }
+  .portrait-editor > header { padding-inline-end: 18px; }
+  .portrait-editor > header > button { position: static; margin-top: 12px; }
+  .portrait-hero-card { grid-template-columns: 1fr; }
+  .portrait-hero-card > .portrait-figure { width: min(240px, 100%); justify-self: center; }
+  .portrait-version-strip, .portrait-state-panel > section, .portrait-stage-preview > section, .portrait-provenance > section { grid-template-columns: 1fr; }
+  .portrait-identity-warning { grid-column: 1; padding-inline-end: 12px; }
+  .portrait-identity-warning button { position: static; margin-top: 9px; }
   .organization-legend { display: flex; overflow-x: auto; }
   .organization-editor > header, .clue-editor > header, .world-entry-editor > header {
     align-items: flex-start; padding-inline-end: 17px; flex-wrap: wrap;
