@@ -1686,6 +1686,20 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .context-kind { padding: 2px 4px; border-radius: 10px; color: var(--muted); font-size: 7px; font-style: normal; background: var(--paper-deep); }
 .context-kind.private { color: var(--accent); background: var(--accent-soft); }
 .context-kind.session { color: var(--amber); background: var(--amber-soft); }
+.ai-player-disclosures { margin-top: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); overflow: hidden; }
+.ai-player-disclosures.included { border-color: color-mix(in srgb, var(--amber) 52%, var(--line)); }
+.ai-player-disclosures > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 10px; background: var(--paper-deep); }
+.ai-player-disclosures > header div { display: grid; gap: 2px; }
+.ai-player-disclosures > header strong { font-size: 9px; }
+.ai-player-disclosures > header small, .ai-player-disclosures > header span { color: var(--muted); font-size: 7px; }
+.ai-player-disclosures > div { display: grid; gap: 5px; padding: 8px 10px; }
+.ai-player-disclosures article { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 7px; }
+.ai-player-disclosures article > span { color: var(--amber); font-size: 7px; font-weight: 800; }
+.ai-player-disclosures article strong { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.ai-player-disclosures article em { color: var(--muted); font-size: 7px; font-style: normal; }
+.ai-player-disclosures article.revoked em { color: var(--accent); font-weight: 800; }
+.ai-player-disclosures > p { margin: 0; padding: 11px 10px; color: var(--muted); font-size: 8px; line-height: 1.55; }
+.ai-player-disclosures > footer { padding: 8px 10px; border-top: 1px solid var(--line); color: var(--blue); font-size: 7px; line-height: 1.45; }
 .ai-live-context { display: grid; gap: 6px; margin-top: 10px; }
 .ai-live-context > span, .ai-speaker-select > span { color: var(--muted); font-size: 9px; font-weight: 800; }
 .ai-live-context > span small { margin-left: 4px; font-weight: 400; }
@@ -3552,6 +3566,8 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .brand-block strong { font-size: 15px; }
   .primary-navigation button { padding-inline: 6px; font-size: 9px; }
   .ai-source-grid, .knowledge-boundary-preview { grid-template-columns: 1fr; }
+  .ai-player-disclosures article { grid-template-columns: 52px minmax(0, 1fr); }
+  .ai-player-disclosures article em { grid-column: 2; }
 }
 
 @media (prefers-color-scheme: dark) {

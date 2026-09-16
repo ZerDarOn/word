@@ -11,6 +11,10 @@ export function useSessionAssetDeliveries(campaignId: string, sessionId: string)
   const [deliveries, setDeliveries] = useState<LoreCueAssetDelivery[]>([]);
 
   useEffect(() => {
+    if (!campaignId || !sessionId) {
+      const clearTimer = window.setTimeout(() => setDeliveries([]), 0);
+      return () => window.clearTimeout(clearTimer);
+    }
     const sync = () => setDeliveries(readAssetDeliveriesForSession(campaignId, sessionId));
     const timer = window.setTimeout(sync, 0);
     window.addEventListener(LORECUE_ASSET_USAGE_EVENT, sync);

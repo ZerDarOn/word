@@ -6,6 +6,7 @@ import {
   saveProjectConsultations,
   type LoreCueConsultationRecord,
 } from "./lorecue_project_store";
+import { useSessionAssetDeliveries } from "./use_session_asset_deliveries";
 
 type AiMode = "查设定" | "创作协作" | "冲突检查" | "GM 救场";
 type SourceKind = "source" | "session" | "private" | "live";
@@ -15,6 +16,12 @@ interface LoreCueAiAssistantProps {
   initialPrompt: string;
   projectId: string;
   scope: string;
+  campaignContext?: {
+    campaignId: string;
+    campaignTitle: string;
+    sessionId: string;
+    sessionLabel: string;
+  };
   onClose: () => void;
 }
 
@@ -26,7 +33,7 @@ interface ContextSource {
   defaultSelected: boolean;
 }
 
-const contextSources: ContextSource[] = [
+const baseContextSources: ContextSource[] = [
   { id: "current", label: "当前条目", detail: "正在查看的场景与段落", kind: "source", defaultSelected: true },
   { id: "character", label: "角色档案", detail: "公开信息与主持人秘密分开读取", kind: "private", defaultSelected: true },
   { id: "session", label: "当前场次", detail: "已确认记录与临场内容", kind: "session", defaultSelected: true },
@@ -48,8 +55,26 @@ export function LoreCueAiAssistant({
   initialPrompt,
   projectId,
   scope,
+  campaignContext,
   onClose,
 }: LoreCueAiAssistantProps) {
+  const sessionDeliveries = useSessionAssetDeliveries(
+    campaignContext?.campaignId ?? "",
+    campaignContext?.sessionId ?? "",
+  );
+  const contextSources = useMemo<ContextSource[]>(() => {
+    if (!campaignContext) return baseContextSources;
+    const revokedCount = sessionDeliveries.filter((delivery) => delivery.status === "revoked").length;
+    return [...baseContextSources, {
+      id: "player-disclosures",
+      label: "玩家已知资料",
+      detail: sessionDeliveries.length > 0
+        ? `${campaignContext.sessionLabel} · ${sessionDeliveries.length} 份${revokedCount > 0 ? ` · ${revokedCount} 份已撤回` : ""}`
+        : `${campaignContext.sessionLabel} · 尚无实际发放`,
+      kind: "session",
+      defaultSelected: true,
+    }];
+  }, [campaignContext, sessionDeliveries]);
   const [mode, setMode] = useState<AiMode>("查设定");
   const [question, setQuestion] = useState(initialPrompt);
   const [liveContext, setLiveContext] = useState("");
@@ -68,8 +93,9 @@ export function LoreCueAiAssistant({
 
   const activeSources = useMemo(
     () => contextSources.filter((source) => selectedSources.includes(source.id)),
-    [selectedSources],
+    [contextSources, selectedSources],
   );
+  const playerDisclosuresSelected = selectedSources.includes("player-disclosures");
 
   const knowledgeBoundary = speaker === "伊芙琳"
     ? {
@@ -228,6 +254,28 @@ export function LoreCueAiAssistant({
               </label>
             ))}
           </div>
+          {campaignContext && (
+            <section className={`ai-player-disclosures ${playerDisclosuresSelected ? "included" : "excluded"}`} aria-label="本场玩家已知资料">
+              <header>
+                <div><strong>本场玩家已知边界</strong><small>{campaignContext.campaignTitle} · {campaignContext.sessionLabel}</small></div>
+                <span>{sessionDeliveries.length} 份实际发放</span>
+              </header>
+              {!playerDisclosuresSelected ? (
+                <p>本次请求已排除玩家已知资料；AI 不会借此推断玩家已经看过什么。</p>
+              ) : sessionDeliveries.length > 0 ? (
+                <div>{sessionDeliveries.slice(0, 3).map((delivery) => (
+                  <article className={delivery.status} key={delivery.id}>
+                    <span>{delivery.surface === "player-handout" ? "玩家手册" : "玩家附件"}</span>
+                    <strong>{delivery.playerTitle}</strong>
+                    <em>{delivery.status === "revoked" ? "已撤回但玩家仍已知" : delivery.recipient}</em>
+                  </article>
+                ))}{sessionDeliveries.length > 3 && <small>另有 {sessionDeliveries.length - 3} 份已纳入边界</small>}</div>
+              ) : (
+                <p>这场还没有真实发放记录。AI 必须按“玩家尚未通过资料获知”处理，不能凭模组内容代替披露事实。</p>
+              )}
+              <footer>玩家知道什么与 NPC 知道什么是两条独立边界；这里不会把玩家已知反向赋给 NPC。</footer>
+            </section>
+          )}
           <label className="ai-live-context">
             <span>手动现场输入 <small>不会假装是剧本原文</small></span>
             <textarea
@@ -293,6 +341,7 @@ export function LoreCueAiAssistant({
             <div className="ai-used-context">
               <strong>实际采用的上下文</strong>
               <div>{activeSources.map((source) => <span key={source.id}>{source.label}</span>)}</div>
+              {campaignContext && playerDisclosuresSelected && <p><em>玩家已知</em>{sessionDeliveries.length > 0 ? sessionDeliveries.map((delivery) => delivery.playerTitle).join("、") : "本场没有真实发放记录，不推定玩家已知任何附件内容"}</p>}
               {liveContext.trim() && <p><em>现场输入</em>{liveContext}</p>}
             </div>
 

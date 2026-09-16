@@ -15,6 +15,10 @@ import { initialSessionRecords, type ReviewStatus, type SessionRecord } from "./
 import { ensureCampaignArchive, saveCampaignRecords } from "./lorecue_campaign_store";
 
 const CURRENT_CAMPAIGN_ID = "saffi-old-friends";
+const CURRENT_CAMPAIGN_TITLE = "萨菲港旧案 · 老友组";
+const CURRENT_PROJECT_ID = "saffi-module";
+const CURRENT_SESSION_ID = "session-3";
+const CURRENT_SESSION_LABEL = "第 3 次团 · 码头追踪";
 
 const modeLabels: Record<ConsultationMode, string> = {
   strict: "严格依据",
@@ -115,6 +119,14 @@ export function GmConsultationPrototype() {
     setAiOpen(true);
   }
 
+  function focusCurrentCampaign() {
+    setActiveView("consultation");
+    setAiProjectId(CURRENT_PROJECT_ID);
+    setAiScope(`${CURRENT_CAMPAIGN_TITLE} · ${CURRENT_SESSION_LABEL}`);
+    setLibraryProjectId(CURRENT_PROJECT_ID);
+    setLibraryProjectTitle("萨菲港旧案");
+  }
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">跳到主要内容</a>
@@ -141,7 +153,7 @@ export function GmConsultationPrototype() {
           </button>
           <button
             className={activeView === "consultation" ? "active" : ""}
-            onClick={() => setActiveView("consultation")}
+            onClick={focusCurrentCampaign}
             aria-current={activeView === "consultation" ? "page" : undefined}
           >
             主持人咨询台
@@ -195,7 +207,7 @@ export function GmConsultationPrototype() {
       <CampaignProjectDashboard
         hidden={activeView !== "projects"}
         currentPendingReviews={pendingCount}
-        onOpenCurrentProject={() => setActiveView("consultation")}
+        onOpenCurrentProject={focusCurrentCampaign}
       />
 
       <NarrativeAssetLibrary
@@ -412,7 +424,7 @@ export function GmConsultationPrototype() {
           campaignId={CURRENT_CAMPAIGN_ID}
           records={records}
           onConfirmRecord={handleConfirmRecord}
-          onReturnToConsultation={() => setActiveView("consultation")}
+          onReturnToConsultation={focusCurrentCampaign}
         />
       ) : null}
 
@@ -422,6 +434,12 @@ export function GmConsultationPrototype() {
         initialPrompt={aiPrompt}
         projectId={aiProjectId}
         scope={aiScope}
+        campaignContext={activeView === "consultation" ? {
+          campaignId: CURRENT_CAMPAIGN_ID,
+          campaignTitle: CURRENT_CAMPAIGN_TITLE,
+          sessionId: CURRENT_SESSION_ID,
+          sessionLabel: CURRENT_SESSION_LABEL,
+        } : undefined}
         onClose={() => setAiOpen(false)}
       />
     </div>

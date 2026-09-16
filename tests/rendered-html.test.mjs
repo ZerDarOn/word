@@ -177,6 +177,10 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(aiAssistant, /handleAskAi/);
   assert.match(aiAssistant, /这次允许 AI 看什么/);
   assert.match(aiAssistant, /知识边界检查/);
+  assert.match(aiAssistant, /useSessionAssetDeliveries/);
+  assert.match(aiAssistant, /玩家已知资料/);
+  assert.match(aiAssistant, /已撤回但玩家仍已知/);
+  assert.match(aiAssistant, /玩家知道什么与 NPC 知道什么是两条独立边界/);
   assert.match(aiAssistant, /手动现场输入/);
   assert.match(aiAssistant, /handleConfirmDraft/);
   assert.match(aiAssistant, /尚未成为正式设定/);
@@ -210,6 +214,8 @@ test("stores real narrative files separately from project-scoped references", as
   assert.match(library, /取消引用不会删除原始文件/);
   assert.match(prototype, /currentProjectId={libraryProjectId}/);
   assert.match(prototype, /currentCampaignId={CURRENT_CAMPAIGN_ID}/);
+  assert.match(prototype, /campaignContext={activeView === "consultation"/);
+  assert.match(prototype, /CURRENT_SESSION_ID/);
   assert.match(projectAssetHook, /addEventListener/);
   assert.match(projectAssetHook, /readAssetsLinkedTo/);
 });
