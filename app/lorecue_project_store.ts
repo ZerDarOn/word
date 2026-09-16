@@ -39,6 +39,16 @@ export interface LoreCueConsultationRecord {
   sourceLabels: string[];
   includesLiveContext: boolean;
   liveContext?: string;
+  campaignId?: string;
+  campaignTitle?: string;
+  sessionId?: string;
+  sessionLabel?: string;
+  includesPlayerDisclosures?: boolean;
+  playerDisclosures?: Array<{
+    deliveryId: string;
+    title: string;
+    status: "active" | "revoked";
+  }>;
   createdAt: string;
   status: "pending" | "reviewed";
 }
@@ -117,6 +127,20 @@ function normalizeConsultation(value: unknown): LoreCueConsultationRecord | null
   if (typeof record.id !== "string" || typeof record.question !== "string") return null;
   if (record.status !== "pending" && record.status !== "reviewed") return null;
   const allowedModes = ["查设定", "创作协作", "冲突检查", "GM 救场"];
+  const playerDisclosures = Array.isArray(record.playerDisclosures)
+    ? record.playerDisclosures.flatMap((item) => {
+        if (!item || typeof item !== "object") return [];
+        const disclosure = item as { deliveryId?: unknown; title?: unknown; status?: unknown };
+        if (typeof disclosure.deliveryId !== "string"
+          || typeof disclosure.title !== "string"
+          || (disclosure.status !== "active" && disclosure.status !== "revoked")) return [];
+        return [{
+          deliveryId: disclosure.deliveryId,
+          title: disclosure.title,
+          status: disclosure.status,
+        }];
+      })
+    : [];
   return {
     id: record.id,
     mode: allowedModes.includes(record.mode ?? "") ? record.mode as LoreCueConsultationRecord["mode"] : "查设定",
@@ -126,6 +150,12 @@ function normalizeConsultation(value: unknown): LoreCueConsultationRecord | null
     sourceLabels: Array.isArray(record.sourceLabels) ? record.sourceLabels.filter((item): item is string => typeof item === "string") : [],
     includesLiveContext: Boolean(record.includesLiveContext || record.liveContext),
     liveContext: typeof record.liveContext === "string" ? record.liveContext : undefined,
+    campaignId: typeof record.campaignId === "string" ? record.campaignId : undefined,
+    campaignTitle: typeof record.campaignTitle === "string" ? record.campaignTitle : undefined,
+    sessionId: typeof record.sessionId === "string" ? record.sessionId : undefined,
+    sessionLabel: typeof record.sessionLabel === "string" ? record.sessionLabel : undefined,
+    includesPlayerDisclosures: Boolean(record.includesPlayerDisclosures || playerDisclosures.length > 0),
+    playerDisclosures,
     createdAt: typeof record.createdAt === "string" ? record.createdAt : "未记录时间",
     status: record.status,
   };

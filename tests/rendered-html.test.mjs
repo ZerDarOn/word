@@ -181,6 +181,9 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(aiAssistant, /玩家已知资料/);
   assert.match(aiAssistant, /已撤回但玩家仍已知/);
   assert.match(aiAssistant, /玩家知道什么与 NPC 知道什么是两条独立边界/);
+  assert.match(aiAssistant, /includesPlayerDisclosures/);
+  assert.match(aiAssistant, /playerDisclosures:/);
+  assert.match(aiAssistant, /draft\.sessionLabel/);
   assert.match(aiAssistant, /手动现场输入/);
   assert.match(aiAssistant, /handleConfirmDraft/);
   assert.match(aiAssistant, /尚未成为正式设定/);
@@ -745,6 +748,8 @@ test("centralizes project persistence with versioned and recoverable legacy migr
   assert.match(store, /saveProjectDocuments/);
   assert.match(store, /saveProjectSnapshots/);
   assert.match(store, /saveProjectConsultations/);
+  assert.match(store, /campaignId\?: string/);
+  assert.match(store, /playerDisclosures\?: Array/);
   assert.match(store, /addProjectRecoveryPoint/);
   assert.match(store, /lorecue-project-catalog/);
   assert.match(store, /ensureProjectCatalog/);

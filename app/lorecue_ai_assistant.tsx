@@ -156,6 +156,18 @@ export function LoreCueAiAssistant({
       sourceLabels: activeSources.map((source) => source.label),
       includesLiveContext: Boolean(liveContext.trim()),
       liveContext: liveContext.trim() || undefined,
+      campaignId: campaignContext?.campaignId,
+      campaignTitle: campaignContext?.campaignTitle,
+      sessionId: campaignContext?.sessionId,
+      sessionLabel: campaignContext?.sessionLabel,
+      includesPlayerDisclosures: Boolean(campaignContext && playerDisclosuresSelected),
+      playerDisclosures: campaignContext && playerDisclosuresSelected
+        ? sessionDeliveries.map((delivery) => ({
+            deliveryId: delivery.id,
+            title: delivery.playerTitle,
+            status: delivery.status,
+          }))
+        : [],
       createdAt: new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
       status: "pending",
     };
@@ -391,11 +403,11 @@ export function LoreCueAiAssistant({
                 <article className={draft.status} key={draft.id}>
                   <div>
                     <span>{draft.mode} · {draft.speaker}</span>
-                    <small>{draft.createdAt}</small>
+                    <small>{draft.sessionLabel ? `${draft.sessionLabel} · ` : ""}{draft.createdAt}</small>
                   </div>
                   <p>{draft.question}</p>
                   <footer>
-                    <span>{draft.sourceLabels.length} 份资料{draft.includesLiveContext ? " + 现场输入" : ""}</span>
+                    <span>{draft.sourceLabels.length} 份资料{draft.includesPlayerDisclosures ? ` · ${draft.playerDisclosures?.length ?? 0} 份玩家已知` : ""}{draft.includesLiveContext ? " + 现场输入" : ""}</span>
                     {draft.status === "pending"
                       ? <button onClick={() => handleMarkReviewed(draft.id)}>标为已复盘</button>
                       : <em>已复盘 · 未写入设定</em>}

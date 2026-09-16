@@ -112,6 +112,40 @@ test("legacy writing and AI data migrate into one project envelope without delet
   assert.equal(reloaded.consultations[0].id, "consult-1");
 });
 
+test("session-scoped AI consultations retain their player-knowledge provenance", async () => {
+  const { store } = await loadProjectStore();
+  store.saveProjectConsultations("saffi-module", [{
+    id: "consult-session-3",
+    mode: "GM 救场",
+    speaker: "伊芙琳",
+    question: "玩家已经知道值班名册了吗？",
+    answer: "只知道发放版本中公开的部分。",
+    sourceLabels: ["当前场次", "玩家已知资料"],
+    includesLiveContext: true,
+    liveContext: "玩家刚刚追问旧版名册。",
+    campaignId: "saffi-old-friends",
+    campaignTitle: "萨菲港旧案 · 老友组",
+    sessionId: "session-3",
+    sessionLabel: "第 3 次团 · 码头追踪",
+    includesPlayerDisclosures: true,
+    playerDisclosures: [{
+      deliveryId: "delivery-roster-v2",
+      title: "港务处值班名册（残页）",
+      status: "revoked",
+    }],
+    createdAt: "07-29 21:05",
+    status: "pending",
+  }]);
+
+  const reloaded = store.readProjectEnvelope("saffi-module");
+  const consultation = reloaded.consultations[0];
+  assert.equal(consultation.campaignId, "saffi-old-friends");
+  assert.equal(consultation.sessionId, "session-3");
+  assert.equal(consultation.includesPlayerDisclosures, true);
+  assert.equal(consultation.playerDisclosures[0].status, "revoked");
+  assert.equal(consultation.playerDisclosures[0].title, "港务处值班名册（残页）");
+});
+
 test("unreadable unified project data is quarantined before a fresh envelope is created", async () => {
   const { store, localStorage } = await loadProjectStore({
     "lorecue-project:broken-project": "{not-json",
