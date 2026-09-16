@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
+import { useProjectAssets } from "./use_project_assets";
 
 type AudioTab = "BGM 与音效总览" | "曲目档案" | "场景提示点" | "音效层" | "播放队列";
 type AudioState = "就绪" | "待剪辑" | "缺少文件";
@@ -87,6 +88,7 @@ export function CreativeAudioCueWorkbench({ project, onFeedback }: CreativeAudio
   const [selectedTitle, setSelectedTitle] = useState(audioCues[0].title);
   const [draft, setDraft] = useState(audioCues[0]);
   const [playing, setPlaying] = useState<string | null>(null);
+  const linkedAudioAssets = useProjectAssets(project.id, ["BGM"]);
   const selected = audioCues.find((audio) => audio.title === selectedTitle) ?? audioCues[0];
 
   function selectAudio(audio: AudioCueRecord) {
@@ -113,15 +115,19 @@ export function CreativeAudioCueWorkbench({ project, onFeedback }: CreativeAudio
     <section className="audio-cue-workbench studio-board">
       <div className="studio-page-heading">
         <div><span className="eyebrow">视觉与媒体 · BGM 音效</span><h2>音乐跟随主持人的判断，而不是偷听玩家</h2><p>系统提供容易触发的提示与队列，但所有播放、切换和叠加都由主持人主动确认。</p></div>
-        <button onClick={() => onFeedback("已模拟导入一份音频文件。")}>＋ 导入音频</button>
+        <button onClick={() => onFeedback("请到资料库导入音频并明确引用到当前项目；这里负责场景提示与播放编排。")}>＋ 从资料库关联</button>
       </div>
 
       <section className="audio-policy-banner"><strong>手动触发</strong><span>不会监听对话、语音或群聊，也不会因为识别到关键词自动播放。</span></section>
+      <section className="workbench-asset-strip" aria-label="当前项目已引用音频">
+        <div><strong>资料仓音频</strong><span>{linkedAudioAssets.length} 条明确引用 · {linkedAudioAssets.filter((asset) => asset.hasBinary).length} 个本地源文件</span></div>
+        <div>{linkedAudioAssets.length > 0 ? linkedAudioAssets.map((asset) => <button key={asset.id} onClick={() => onFeedback(`“${asset.title}”来自资料仓；${asset.hasBinary ? "本地源文件可在资料库预览。" : "当前只有演示元数据。"}`)}>{asset.title}<small>{asset.visibility}</small></button>) : <p>当前项目尚未引用 BGM；提示卡不会自动获得公共资料。</p>}</div>
+      </section>
       <section className="audio-metrics" aria-label="BGM 与音效概况">
-        <article><strong>12</strong><span>音频条目</span><small>BGM 5 · 环境 4 · 事件 3</small></article>
+        <article><strong>{linkedAudioAssets.length}</strong><span>资料仓音频</span><small>只统计当前项目明确引用</small></article>
         <article><strong>9</strong><span>关联场景</span><small>允许一曲多场景复用</small></article>
         <article><strong>4</strong><span>音效层</span><small>可在 BGM 上独立开关</small></article>
-        <article className="risk"><strong>2</strong><span>待处理</span><small>缺文件 1 · 循环爆音 1</small></article>
+        <article className="risk"><strong>{linkedAudioAssets.filter((asset) => !asset.hasBinary).length}</strong><span>缺少源文件</span><small>演示元数据不等于可播放文件</small></article>
       </section>
 
       <div className="audio-layout">

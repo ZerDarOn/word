@@ -325,6 +325,7 @@ export function CreativeProjectStudio({
     }
 
     return <CreativeDocumentEditor
+      projectId={project.id}
       projectTitle={project.title}
       documentTitle={activeDocument.title}
       body={activeDocument.body}

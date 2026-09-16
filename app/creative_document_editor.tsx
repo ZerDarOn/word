@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import type { LoreCueAssetRecord } from "./lorecue_asset_store";
+import { useProjectAssets } from "./use_project_assets";
 
 type EditorMode = "编辑" | "专注模式" | "阅读预览";
 type PageWidth = "窄页" | "标准" | "宽页";
@@ -13,6 +15,7 @@ export interface WritingMetadata {
 }
 
 interface CreativeDocumentEditorProps {
+  projectId: string;
   projectTitle: string;
   documentTitle: string;
   body: string;
@@ -30,6 +33,7 @@ const aiOriginal = "伊芙琳把那册发霉的值班记录推过桌面。";
 const aiSuggestion = "伊芙琳没有立刻开口，只把那册发霉的值班记录推过桌面。";
 
 export function CreativeDocumentEditor({
+  projectId,
   projectTitle,
   documentTitle,
   body,
@@ -50,6 +54,7 @@ export function CreativeDocumentEditor({
   const [findTerm, setFindTerm] = useState("");
   const [replaceTerm, setReplaceTerm] = useState("");
   const editorRef = useRef<HTMLTextAreaElement>(null);
+  const projectAssets = useProjectAssets(projectId);
   const wordCount = useMemo(() => body.replace(/\s/g, "").length, [body]);
   const paragraphs = useMemo(() => body.split(/\n{2,}/).filter(Boolean), [body]);
   const matchCount = useMemo(() => findTerm ? body.split(findTerm).length - 1 : 0, [body, findTerm]);
@@ -71,11 +76,11 @@ export function CreativeDocumentEditor({
     });
   }
 
-  function insertMaterial(material: string) {
-    const reference = `\n\n[引用素材：${material}]`;
+  function insertMaterial(material: LoreCueAssetRecord) {
+    const reference = `\n\n[引用素材：${material.title}](lorecue-asset://${material.id})`;
     onChangeBody(`${body}${reference}`);
     setShowMaterials(false);
-    onFeedback(`已插入“${material}”的引用标记；没有复制或修改原始素材。`);
+    onFeedback(`已插入“${material.title}”的稳定引用 ${material.id}；没有复制或修改原始素材。`);
   }
 
   function acceptAiSuggestion() {
@@ -130,7 +135,7 @@ export function CreativeDocumentEditor({
         <button onClick={() => insertMarkup("— “", "”", "对白")}>对白</button>
         <button className={showFindReplace ? "active" : ""} onClick={() => setShowFindReplace((current) => !current)}>查找替换</button>
         <span />
-        <div className="material-insert-wrap"><button onClick={() => setShowMaterials((current) => !current)} aria-expanded={showMaterials}>插入素材</button>{showMaterials && <div className="material-insert-menu"><strong>当前项目已引用</strong>{["伊芙琳 · 立绘", "萨菲港 · 码头地图", "码头 · 暗潮 BGM"].map((material) => <button key={material} onClick={() => insertMaterial(material)}>{material}</button>)}<small>这里只插入引用，不复制原文件。</small></div>}</div>
+        <div className="material-insert-wrap"><button onClick={() => setShowMaterials((current) => !current)} aria-expanded={showMaterials}>插入素材 {projectAssets.length}</button>{showMaterials && <div className="material-insert-menu"><strong>当前项目已明确引用</strong>{projectAssets.map((material) => <button key={material.id} onClick={() => insertMaterial(material)}><span>{material.kind} · {material.visibility}</span><b>{material.title}</b><small>{material.hasBinary ? "本地源文件可用" : "演示元数据"}</small></button>)}{projectAssets.length === 0 && <p>当前项目还没有明确引用的资料。请先到资料库建立引用。</p>}<small>这里只写入稳定素材 ID，不复制原文件；取消项目引用后，旧文档标记仍保留用于溯源。</small></div>}</div>
         <button className="ai-review-button" onClick={() => setShowAiDiff(true)}>AI 修改预览</button>
       </div>}
 

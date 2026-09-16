@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { CreativeProject } from "./creative_project_data";
+import { useProjectAssets } from "./use_project_assets";
 
 type PortraitTab = "角色立绘总览" | "身份版本" | "表情与状态" | "登场预览" | "素材来源";
 type PortraitState = "正式素材" | "待确认" | "缺少版本";
@@ -38,6 +39,7 @@ export function CreativePortraitWorkbench({ project, onFeedback }: CreativePortr
   const [selectedName, setSelectedName] = useState(portraits[0].character);
   const [draft, setDraft] = useState(portraits[0]);
   const [previewState, setPreviewState] = useState("平静");
+  const linkedPortraitAssets = useProjectAssets(project.id, ["立绘"]);
   const selected = portraits.find((portrait) => portrait.character === selectedName) ?? portraits[0];
 
   function selectPortrait(portrait: PortraitRecord) {
@@ -59,14 +61,18 @@ export function CreativePortraitWorkbench({ project, onFeedback }: CreativePortr
     <section className="portrait-workbench studio-board">
       <div className="studio-page-heading">
         <div><span className="eyebrow">视觉与媒体 · 角色立绘</span><h2>立绘服务于角色状态，但不替角色泄露身份</h2><p>同一角色可以拥有身份、年代、服装与伤势版本；主持人决定本次登场真正显示哪一张。</p></div>
-        <button onClick={() => onFeedback("已模拟导入一组角色立绘。")}>＋ 导入立绘组</button>
+        <button onClick={() => onFeedback("请先到资料库导入立绘并明确引用到当前项目；这里负责身份版本和登场规则。")}>＋ 从资料库关联</button>
       </div>
       <section className="portrait-policy-banner"><strong>素材候选 ≠ 正式设定</strong><span>AI 候选图必须由创作者确认后才可设为正式素材，也不会自动替换角色当前立绘。</span></section>
+      <section className="workbench-asset-strip" aria-label="当前项目已引用立绘">
+        <div><strong>资料仓立绘</strong><span>{linkedPortraitAssets.length} 条明确引用 · {linkedPortraitAssets.filter((asset) => asset.hasBinary).length} 个本地源文件</span></div>
+        <div>{linkedPortraitAssets.length > 0 ? linkedPortraitAssets.map((asset) => <button key={asset.id} onClick={() => onFeedback(`“${asset.title}”来自资料仓；${asset.hasBinary ? "本地源文件可在资料库预览。" : "当前只有演示元数据。"}`)}>{asset.title}<small>{asset.visibility}</small></button>) : <p>当前项目尚未引用立绘；角色档案不会自动借用其他项目图片。</p>}</div>
+      </section>
       <section className="portrait-metrics" aria-label="角色立绘概况">
-        <article><strong>8</strong><span>角色立绘组</span><small>共 26 个视觉版本</small></article>
+        <article><strong>{linkedPortraitAssets.length}</strong><span>资料仓立绘</span><small>只统计当前项目明确引用</small></article>
         <article><strong>12</strong><span>表情与状态</span><small>可按场景快速切换</small></article>
         <article><strong>5</strong><span>身份版本</span><small>包含年代与伪装</small></article>
-        <article className="risk"><strong>3</strong><span>待处理</span><small>缺图 1 · 授权待确认 2</small></article>
+        <article className="risk"><strong>{linkedPortraitAssets.filter((asset) => !asset.hasBinary).length}</strong><span>缺少源文件</span><small>候选元数据不等于正式图片</small></article>
       </section>
 
       <div className="portrait-layout">

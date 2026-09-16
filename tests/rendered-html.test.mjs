@@ -184,10 +184,11 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
 });
 
 test("stores real narrative files separately from project-scoped references", async () => {
-  const [assetStore, library, prototype] = await Promise.all([
+  const [assetStore, library, prototype, projectAssetHook] = await Promise.all([
     readFile(new URL("../app/lorecue_asset_store.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/narrative_asset_library.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/gm_consultation_prototype.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/use_project_assets.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(assetStore, /LORECUE_ASSET_CATALOG_FORMAT/);
@@ -195,12 +196,16 @@ test("stores real narrative files separately from project-scoped references", as
   assert.match(assetStore, /saveAssetBinary/);
   assert.match(assetStore, /setAssetTargetLink/);
   assert.match(assetStore, /quarantine/);
+  assert.match(assetStore, /LORECUE_ASSET_CATALOG_EVENT/);
+  assert.match(assetStore, /readAssetsLinkedTo/);
   assert.match(library, /type="file"/);
   assert.match(library, /100 \* 1024 \* 1024/);
   assert.match(library, /不会上传网络/);
   assert.match(library, /取消引用不会删除原始文件/);
   assert.match(prototype, /currentProjectId={libraryProjectId}/);
   assert.match(prototype, /currentCampaignId={CURRENT_CAMPAIGN_ID}/);
+  assert.match(projectAssetHook, /addEventListener/);
+  assert.match(projectAssetHook, /readAssetsLinkedTo/);
 });
 
 test("connects the full creative workflow from project creation to version review", async () => {
@@ -232,6 +237,10 @@ test("connects the full creative workflow from project creation to version revie
   assert.match(projectStudio, /版本/);
   assert.match(projectStudio, /handleCreateSnapshot/);
   assert.match(documentEditor, /插入素材/);
+  assert.match(documentEditor, /useProjectAssets/);
+  assert.match(documentEditor, /lorecue-asset:\/\//);
+  assert.match(documentEditor, /稳定引用/);
+  assert.match(projectStudio, /projectId={project\.id}/);
   assert.match(narrativeViews, /人物关系/);
   assert.match(versionWorkbench, /不会自动覆盖当前正文/);
 });
@@ -543,6 +552,9 @@ test("provides manually triggered scene audio cues without conversation monitori
   assert.match(audioWorkbench, /玩家端名称/);
   assert.match(audioWorkbench, /播放队列/);
   assert.match(audioWorkbench, /handleSaveAudioCue/);
+  assert.match(audioWorkbench, /useProjectAssets/);
+  assert.match(audioWorkbench, /资料仓音频/);
+  assert.match(audioWorkbench, /明确引用/);
   assert.match(narrativeViews, /<CreativeAudioCueWorkbench/);
 });
 
@@ -583,6 +595,9 @@ test("organizes character portraits by identity, state, and asset provenance", a
   assert.match(portraitWorkbench, /AI 候选图/);
   assert.match(portraitWorkbench, /不会自动替换/);
   assert.match(portraitWorkbench, /handleSavePortrait/);
+  assert.match(portraitWorkbench, /useProjectAssets/);
+  assert.match(portraitWorkbench, /资料仓立绘/);
+  assert.match(portraitWorkbench, /不会自动借用其他项目图片/);
   assert.match(narrativeViews, /<CreativePortraitWorkbench/);
 });
 

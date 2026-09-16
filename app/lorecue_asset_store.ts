@@ -3,6 +3,7 @@ export const LORECUE_ASSET_CATALOG_VERSION = 1;
 export const LORECUE_ASSET_DB_NAME = "lorecue-assets";
 export const LORECUE_ASSET_DB_VERSION = 1;
 export const LORECUE_ASSET_FILE_STORE = "files";
+export const LORECUE_ASSET_CATALOG_EVENT = "lorecue:asset-catalog-changed";
 
 export type LoreCueAssetKind = "人物" | "地点" | "地图" | "立绘" | "BGM" | "规则" | "文档";
 export type LoreCueAssetVisibility = "主持人私有" | "玩家可见" | "按场次解锁";
@@ -126,6 +127,19 @@ export function saveAssetCatalog(assets: LoreCueAssetRecord[]) {
     assets: clone(assets),
   };
   window.localStorage.setItem(LORECUE_ASSET_CATALOG_FORMAT, JSON.stringify(catalog));
+  if (typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
+    window.dispatchEvent(new CustomEvent(LORECUE_ASSET_CATALOG_EVENT));
+  }
+}
+
+export function readAssetCatalog() {
+  return clone(readCatalog()?.assets ?? []);
+}
+
+export function readAssetsLinkedTo(targetType: LoreCueAssetTargetType, targetId: string) {
+  return readAssetCatalog().filter((asset) => asset.links.some((link) => (
+    link.targetType === targetType && link.targetId === targetId
+  )));
 }
 
 export function ensureAssetCatalog(initialAssets: LoreCueAssetRecord[]) {

@@ -106,6 +106,9 @@ test("asset references are isolated by creative project and campaign target", as
     targetLabel: "萨菲港旧案 · 老友组",
   }, true);
   assert.equal(assets[0].links.length, 2);
+  assert.equal(store.readAssetsLinkedTo("creative", "saffi-module").length, 1);
+  assert.equal(store.readAssetsLinkedTo("campaign", "saffi-old-friends").length, 1);
+  assert.equal(store.readAssetsLinkedTo("campaign", "another-campaign").length, 0);
 
   assets = store.setAssetTargetLink(assets, "asset-map", {
     targetType: "creative",
@@ -114,6 +117,7 @@ test("asset references are isolated by creative project and campaign target", as
   }, false);
   assert.equal(assets[0].links.length, 1);
   assert.equal(assets[0].links[0].targetType, "campaign");
+  assert.equal(store.readAssetsLinkedTo("creative", "saffi-module").length, 0);
 });
 
 test("unreadable asset catalogs are quarantined before defaults are written", async () => {
