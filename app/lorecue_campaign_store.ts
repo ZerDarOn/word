@@ -19,6 +19,18 @@ export interface LoreCueCampaignCatalog {
   projects: CampaignProject[];
 }
 
+export type LoreCueHandoffKind = "长期事实" | "未决问题" | "保留状态";
+
+export interface LoreCueHandoffItem {
+  id: string;
+  kind: LoreCueHandoffKind;
+  text: string;
+  sourceSessionId: string;
+  sourceSessionLabel: string;
+  sourceLabel: string;
+  selected: boolean;
+}
+
 export interface LoreCueCampaignArchive {
   format: typeof LORECUE_CAMPAIGN_ARCHIVE_FORMAT;
   version: typeof LORECUE_CAMPAIGN_STORE_VERSION;
@@ -29,6 +41,7 @@ export interface LoreCueCampaignArchive {
   brief: string;
   completedObjectiveIds: string[];
   records: SessionRecord[];
+  handoffItems: LoreCueHandoffItem[];
   draftTitle: string;
   draftPlan: string;
 }
@@ -79,6 +92,18 @@ function isSessionRecord(value: unknown): value is SessionRecord {
     && (record.kind === "spoken" || record.kind === "happened")
     && typeof record.scenario === "string"
     && ["待确认", "客观事实", "NPC 主张", "仅本场", "废弃"].includes(record.status ?? "");
+}
+
+function isHandoffItem(value: unknown): value is LoreCueHandoffItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<LoreCueHandoffItem>;
+  return typeof item.id === "string"
+    && ["长期事实", "未决问题", "保留状态"].includes(item.kind ?? "")
+    && typeof item.text === "string"
+    && typeof item.sourceSessionId === "string"
+    && typeof item.sourceSessionLabel === "string"
+    && typeof item.sourceLabel === "string"
+    && typeof item.selected === "boolean";
 }
 
 function quarantine(key: string, raw: string) {
@@ -149,6 +174,7 @@ function createInitialArchive(campaignId: string): LoreCueCampaignArchive {
     brief: initialBrief,
     completedObjectiveIds: sessionObjectives.filter((item) => item.complete).map((item) => item.id),
     records: clone(initialSessionRecords),
+    handoffItems: [],
     draftTitle: "未命名场次",
     draftPlan: "承接灰潮号靠港线索，等待团后复盘完成后补充。",
   };
@@ -176,6 +202,7 @@ export function readCampaignArchive(campaignId: string): LoreCueCampaignArchive 
         ? value.completedObjectiveIds.filter((id): id is string => typeof id === "string")
         : [],
       records: value.records,
+      handoffItems: Array.isArray(value.handoffItems) ? value.handoffItems.filter(isHandoffItem) : [],
       draftTitle: typeof value.draftTitle === "string" ? value.draftTitle : "未命名场次",
       draftPlan: typeof value.draftPlan === "string" ? value.draftPlan : "",
       updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
@@ -242,6 +269,10 @@ export function saveCampaignBrief(campaignId: string, brief: string) {
 
 export function saveCampaignObjectives(campaignId: string, completedObjectiveIds: string[]) {
   return updateCampaignArchive(campaignId, (current) => ({ ...current, completedObjectiveIds: [...completedObjectiveIds] }));
+}
+
+export function saveCampaignHandoff(campaignId: string, handoffItems: LoreCueHandoffItem[]) {
+  return updateCampaignArchive(campaignId, (current) => ({ ...current, handoffItems: clone(handoffItems) }));
 }
 
 export function saveCampaignDraft(

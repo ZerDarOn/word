@@ -18,8 +18,10 @@ import {
   ensureCampaignArchive,
   saveCampaignBrief,
   saveCampaignDraft,
+  saveCampaignHandoff,
   saveCampaignObjectives,
   saveCampaignSessions,
+  type LoreCueHandoffItem,
 } from "./lorecue_campaign_store";
 import { updateProjectConsultationStatus } from "./lorecue_project_store";
 import { useSessionAssetDeliveries } from "./use_session_asset_deliveries";
@@ -47,6 +49,56 @@ function sessionStatusClass(status: SessionSummary["status"]) {
   return "archived";
 }
 
+const baselineHandoffItems: LoreCueHandoffItem[] = [
+  {
+    id: "handoff-following-risk",
+    kind: "未决问题",
+    text: "斯诺森是否发现自己被跟踪？",
+    sourceSessionId: "session-3",
+    sourceSessionLabel: "第 3 次团 · 码头追踪",
+    sourceLabel: "本场时间线 · 玩家选择等待换班",
+    selected: false,
+  },
+  {
+    id: "handoff-roster-choice",
+    kind: "未决问题",
+    text: "调查者会先核对旧版名册，还是等待“灰潮号”靠港？",
+    sourceSessionId: "session-3",
+    sourceSessionLabel: "第 3 次团 · 码头追踪",
+    sourceLabel: "本场目标 · 尚未推进",
+    selected: false,
+  },
+  {
+    id: "handoff-evelyn-state",
+    kind: "保留状态",
+    text: "伊芙琳仍可被说服，但修改名册的直接证据尚未公开。",
+    sourceSessionId: "session-3",
+    sourceSessionLabel: "第 3 次团 · 码头追踪",
+    sourceLabel: "NPC 知情与披露 · 场次结束状态",
+    selected: false,
+  },
+];
+
+function buildHandoffCandidates(records: SessionRecord[], existing: LoreCueHandoffItem[]) {
+  const promotedRecords: LoreCueHandoffItem[] = records.flatMap((record) => {
+    if (record.status !== "客观事实" && record.status !== "NPC 主张") return [];
+    return [{
+      id: `handoff-record-${record.id}`,
+      kind: record.status === "客观事实" ? "长期事实" as const : "保留状态" as const,
+      text: record.text,
+      sourceSessionId: "session-3",
+      sourceSessionLabel: "第 3 次团 · 码头追踪",
+      sourceLabel: `临场记录 · ${record.scenario} · ${record.status}`,
+      selected: false,
+    }];
+  });
+  const existingById = new Map(existing.map((item) => [item.id, item]));
+  return [...promotedRecords, ...baselineHandoffItems].map((item) => ({
+    ...item,
+    selected: existingById.get(item.id)?.selected ?? false,
+  }));
+}
+
 export function SessionArchivePanel({
   campaignId,
   records,
@@ -63,6 +115,7 @@ export function SessionArchivePanel({
   const [timelineFilter, setTimelineFilter] = useState<"全部" | TimelineKind>("全部");
   const [draftTitle, setDraftTitle] = useState("未命名场次");
   const [draftPlan, setDraftPlan] = useState("承接灰潮号靠港线索，等待团后复盘完成后补充。");
+  const [handoffItems, setHandoffItems] = useState<LoreCueHandoffItem[]>(baselineHandoffItems);
   const [feedback, setFeedback] = useState("正在读取本团的场次档案……");
 
   useEffect(() => {
@@ -74,6 +127,7 @@ export function SessionArchivePanel({
       setCompletedObjectives(new Set(archive.completedObjectiveIds));
       setDraftTitle(archive.draftTitle);
       setDraftPlan(archive.draftPlan);
+      setHandoffItems(buildHandoffCandidates(archive.records, archive.handoffItems));
       setFeedback(`场次数据仓 v1 已就绪 · ${archive.sessions.length} 次团 · ${archive.records.length} 条临场记录。`);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -142,6 +196,51 @@ export function SessionArchivePanel({
   function handleReviewConsultation(projectId: string, consultationId: string) {
     updateProjectConsultationStatus(projectId, consultationId, "reviewed");
     setFeedback("该条 AI 咨询已标为已复盘；建议与来源快照仍未升级成正式设定。");
+  }
+
+  function handleRefreshHandoffCandidates() {
+    const nextItems = buildHandoffCandidates(records, handoffItems);
+    setHandoffItems(nextItems);
+    saveCampaignHandoff(campaignId, nextItems);
+    const promotedCount = nextItems.filter((item) => item.id.startsWith("handoff-record-")).length;
+    setFeedback(`承接候选已刷新：${promotedCount} 条已确认临场内容，AI 咨询没有被直接写入。`);
+  }
+
+  function handleToggleHandoff(itemId: string) {
+    const nextItems = handoffItems.map((item) => item.id === itemId
+      ? { ...item, selected: !item.selected }
+      : item);
+    setHandoffItems(nextItems);
+    saveCampaignHandoff(campaignId, nextItems);
+  }
+
+  function handleApplyHandoffToDraft() {
+    const selectedItems = handoffItems.filter((item) => item.selected);
+    if (selectedItems.length === 0) {
+      setFeedback("请先勾选至少一条承接项；未选择的候选不会进入下一场。");
+      return;
+    }
+    const existingDraft = sessions.find((session) => session.status === "草稿");
+    const draft = existingDraft ?? {
+      id: "session-4",
+      number: "第 4 次团",
+      title: "灰潮号靠港",
+      date: "待安排",
+      time: "时间未定",
+      status: "草稿" as const,
+    };
+    const nextTitle = draftTitle === "未命名场次" ? draft.title : draftTitle;
+    const nextPlan = selectedItems.map((item) => `- [${item.kind}] ${item.text}\n  来源：${item.sourceSessionLabel} · ${item.sourceLabel}`).join("\n");
+    const nextSessions = existingDraft
+      ? sessions.map((session) => session.id === draft.id ? { ...session, title: nextTitle } : session)
+      : [...sessions, { ...draft, title: nextTitle }];
+    setSessions(nextSessions);
+    setSelectedSessionId(draft.id);
+    setDraftTitle(nextTitle);
+    setDraftPlan(nextPlan);
+    saveCampaignHandoff(campaignId, handoffItems);
+    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id);
+    setFeedback(`已把 ${selectedItems.length} 条有来源的承接项写入第 4 次团草稿。`);
   }
 
   function handleSaveDraft() {
@@ -489,15 +588,16 @@ export function SessionArchivePanel({
                   <div><dt>仅本场</dt><dd>{records.filter((item) => item.status === "仅本场").length}</dd></div>
                 </dl>
               </section>
-              <section className="archive-card next-session-card">
-                <span className="eyebrow">留给下一次</span>
-                <h2>第 4 次团接口</h2>
-                <ul>
-                  <li>斯诺森是否发现自己被跟踪？</li>
-                  <li>“灰潮号”将在两天后靠港</li>
-                  <li>伊芙琳的立场仍可被说服</li>
-                </ul>
-                <button onClick={handleCreateSession}>建立下一次团草稿</button>
+              <section className="archive-card next-session-card handoff-card">
+                <div className="handoff-card-heading"><div><span className="eyebrow">留给下一次</span><h2>第 4 次团承接清单</h2></div><b>{handoffItems.filter((item) => item.selected).length}/{handoffItems.length}</b></div>
+                <p>候选不会自动进入下一场；只有主持人勾选的内容会连同来源写入草稿。</p>
+                <button className="handoff-refresh" onClick={handleRefreshHandoffCandidates}>从复盘结果刷新候选</button>
+                <div className="handoff-list">{handoffItems.map((item) => <label key={item.id}>
+                  <input type="checkbox" checked={item.selected} onChange={() => handleToggleHandoff(item.id)} />
+                  <span><em>{item.kind}</em><strong>{item.text}</strong><small>{item.sourceSessionLabel} · {item.sourceLabel}</small></span>
+                </label>)}</div>
+                <aside><strong>AI 不直接进入承接</strong><p>咨询建议必须先转为客观事实、NPC 主张或由主持人另建候选，不能因为“已复盘”就写入下一场。</p></aside>
+                <button className="handoff-apply" disabled={!handoffItems.some((item) => item.selected)} onClick={handleApplyHandoffToDraft}>写入第 4 次团草稿</button>
               </section>
             </aside>
           </div>

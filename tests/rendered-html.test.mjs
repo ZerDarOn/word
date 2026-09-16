@@ -129,6 +129,8 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(store, /saveCampaignRecords/);
   assert.match(store, /saveCampaignSessions/);
   assert.match(store, /saveCampaignDraft/);
+  assert.match(store, /saveCampaignHandoff/);
+  assert.match(store, /LoreCueHandoffItem/);
   assert.match(prototype, /CURRENT_CAMPAIGN_ID/);
   assert.match(prototype, /saveCampaignRecords/);
   assert.match(prototype, /useSessionConsultations/);
@@ -145,6 +147,10 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(archivePanel, /AI 咨询处理/);
   assert.match(archivePanel, /pendingReviewCount/);
   assert.match(archivePanel, /已复盘 · 未写入设定/);
+  assert.match(archivePanel, /buildHandoffCandidates/);
+  assert.match(archivePanel, /第 4 次团承接清单/);
+  assert.match(archivePanel, /AI 不直接进入承接/);
+  assert.match(archivePanel, /写入第 4 次团草稿/);
   assert.match(consultationHook, /readProjectConsultationsForSession/);
   assert.match(consultationHook, /LORECUE_PROJECT_STORE_EVENT/);
   assert.match(archiveData, /initialSessionRecords/);

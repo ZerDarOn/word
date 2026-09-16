@@ -646,6 +646,22 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   color: var(--accent-dark); font-size: 11px; font-weight: 800; background: transparent; cursor: pointer;
 }
 .next-session-card button:hover { background: var(--accent-soft); }
+.handoff-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.handoff-card-heading b { padding: 4px 7px; border-radius: 999px; color: var(--accent-dark); font-size: 10px; background: var(--accent-soft); }
+.handoff-card > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.next-session-card .handoff-refresh { margin-top: 10px; border-color: var(--line-strong); color: var(--blue); }
+.handoff-list { display: grid; gap: 7px; margin-top: 10px; }
+.handoff-list label { display: grid; grid-template-columns: 15px minmax(0, 1fr); gap: 7px; padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); cursor: pointer; }
+.handoff-list input { margin-top: 2px; accent-color: var(--forest); }
+.handoff-list label > span { display: grid; gap: 4px; }
+.handoff-list em { justify-self: start; padding: 2px 5px; border-radius: 999px; color: var(--forest); font-size: 9px; font-style: normal; font-weight: 800; background: var(--forest-soft); }
+.handoff-list strong { font-size: 11px; line-height: 1.5; }
+.handoff-list small { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.handoff-card > aside { margin-top: 10px; padding: 9px; border-inline-start: 3px solid var(--blue); border-radius: 4px; background: var(--blue-soft); }
+.handoff-card > aside strong { color: var(--blue); font-size: 10px; }
+.handoff-card > aside p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.next-session-card .handoff-apply { background: var(--accent-soft); }
+.next-session-card .handoff-apply:disabled { opacity: .45; cursor: not-allowed; }
 .archive-feedback { min-height: 20px; margin: 13px 2px 0; color: var(--muted); font-size: 11px; }
 .historical-overview { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.6fr); gap: 18px; }
 .historical-recap > p { margin: 0; padding: 22px; font-family: Georgia, "Songti SC", serif; font-size: 17px; line-height: 1.8; }

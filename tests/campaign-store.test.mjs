@@ -112,6 +112,15 @@ test("brief, objectives, session list, and next-session draft update independent
   store.ensureCampaignArchive("campaign-a");
   store.saveCampaignBrief("campaign-a", "新的团前简报");
   store.saveCampaignObjectives("campaign-a", ["objective-b"]);
+  store.saveCampaignHandoff("campaign-a", [{
+    id: "handoff-fact-1",
+    kind: "长期事实",
+    text: "灰潮号将在两天后靠港",
+    sourceSessionId: "session-3",
+    sourceSessionLabel: "第 3 次团 · 码头追踪",
+    sourceLabel: "船期表 · 已确认",
+    selected: true,
+  }]);
   const sessions = [
     ...sessionData.initialSessionSummaries,
     { id: "session-4", number: "第 4 次团", title: "未命名场次", date: "待安排", time: "时间未定", status: "草稿" },
@@ -122,6 +131,10 @@ test("brief, objectives, session list, and next-session draft update independent
   const archive = store.readCampaignArchive("campaign-a");
   assert.equal(archive.brief, "新的团前简报");
   assert.equal(archive.completedObjectiveIds.join(","), "objective-b");
+  assert.equal(archive.handoffItems.length, 1);
+  assert.equal(archive.handoffItems[0].kind, "长期事实");
+  assert.equal(archive.handoffItems[0].selected, true);
+  assert.equal(archive.handoffItems[0].sourceSessionId, "session-3");
   assert.equal(archive.sessions.length, 2);
   assert.equal(archive.selectedSessionId, "session-4");
   assert.equal(archive.draftTitle, "灰潮号靠港");
