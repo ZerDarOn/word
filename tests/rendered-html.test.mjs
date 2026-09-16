@@ -132,6 +132,9 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(prototype, /saveCampaignRecords/);
   assert.match(dashboard, /currentPendingReviews/);
   assert.match(archivePanel, /场次数据仓 v1/);
+  assert.match(archivePanel, /useSessionAssetDeliveries/);
+  assert.match(archivePanel, /本场发放资料/);
+  assert.match(archivePanel, /已撤回但曾披露/);
   assert.match(archiveData, /initialSessionRecords/);
 });
 
@@ -616,6 +619,7 @@ test("persists project-scoped asset bindings and delivery history", async () => 
   assert.match(usageStore, /revokeAssetDelivery/);
   assert.match(usageStore, /removeAssetBinding/);
   assert.match(usageStore, /LORECUE_ASSET_USAGE_EVENT/);
+  assert.match(usageStore, /readAssetDeliveriesForSession/);
   assert.match(usageHook, /ensureAssetUsageEnvelope/);
   assert.match(usageHook, /addEventListener/);
 });

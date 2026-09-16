@@ -21,6 +21,7 @@ import {
   saveCampaignObjectives,
   saveCampaignSessions,
 } from "./lorecue_campaign_store";
+import { useSessionAssetDeliveries } from "./use_session_asset_deliveries";
 
 interface SessionArchivePanelProps {
   campaignId: string;
@@ -78,6 +79,7 @@ export function SessionArchivePanel({
 
   const selectedSession =
     sessions.find((session) => session.id === selectedSessionId) ?? sessions[2];
+  const sessionDeliveries = useSessionAssetDeliveries(campaignId, selectedSession.id);
   const filteredTimeline = useMemo(
     () =>
       timelineFilter === "全部"
@@ -210,6 +212,19 @@ export function SessionArchivePanel({
           <div><dt>参与</dt><dd>5 名玩家 · 5 名角色</dd></div>
           <div><dt>承接</dt><dd>第 2 次团“失踪的账本”</dd></div>
         </dl>
+
+        <section className="archive-card session-delivery-summary" aria-label="本场玩家资料发放">
+          <div className="archive-card-heading">
+            <div><span className="eyebrow">玩家实际已知</span><h2>本场发放资料</h2></div>
+            <span className="count-pill">{sessionDeliveries.length}</span>
+          </div>
+          {sessionDeliveries.length > 0 ? <div className="session-delivery-list">{sessionDeliveries.map((delivery) => <article className={delivery.status === "revoked" ? "revoked" : ""} key={delivery.id}>
+            <span>{delivery.surface === "player-handout" ? "玩家手册" : "玩家附件"}</span>
+            <div><strong>{delivery.playerTitle}</strong><p>{delivery.recipient} · {delivery.version} · 素材 {delivery.assetId ?? "无绑定"}</p><small>{delivery.sessionLabel} · {new Date(delivery.deliveredAt).toLocaleString("zh-CN")}</small></div>
+            <em>{delivery.status === "revoked" ? "已撤回但曾披露" : "仍可查看"}</em>
+          </article>)}</div> : <div className="session-delivery-empty"><strong>本场尚无玩家资料发放记录</strong><p>只有明确归属到“{selectedSession.number} · {selectedSession.title}”的真实发放才会出现在这里。</p></div>}
+          <p className="session-delivery-note">撤回不会让玩家忘记内容；团后复盘和 AI 知识边界仍会把历史披露视为玩家已知。</p>
+        </section>
 
         {showCurrentSession && (
           <nav className="archive-phase-tabs" aria-label="场次档案阶段">

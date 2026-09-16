@@ -471,6 +471,21 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .archive-metadata div:last-child { border-inline-end: 0; }
 .archive-metadata dt { margin-bottom: 4px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
 .archive-metadata dd { margin: 0; font-size: 12px; font-weight: 700; }
+.session-delivery-summary { margin-bottom: 18px; }
+.session-delivery-list { display: grid; gap: 7px; padding: 0 18px 14px; }
+.session-delivery-list article { display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-inline-start: 3px solid var(--forest); border-radius: 6px; background: var(--paper); }
+.session-delivery-list article.revoked { border-inline-start-color: var(--accent); }
+.session-delivery-list article > span { color: var(--forest); font-size: 8px; font-weight: 800; }
+.session-delivery-list article.revoked > span { color: var(--accent-dark); }
+.session-delivery-list strong { font-size: 10px; }
+.session-delivery-list p { margin: 4px 0; color: var(--muted); font-size: 8px; }
+.session-delivery-list small { color: var(--blue); font-size: 7px; }
+.session-delivery-list em { padding: 4px 7px; border-radius: 999px; color: var(--forest); font-size: 7px; font-style: normal; font-weight: 800; background: var(--forest-soft); }
+.session-delivery-list article.revoked em { color: var(--accent-dark); background: var(--accent-soft); }
+.session-delivery-empty { margin: 0 18px 14px; padding: 16px; border: 1px dashed var(--line); border-radius: 6px; text-align: center; background: var(--paper); }
+.session-delivery-empty strong { font-size: 10px; }
+.session-delivery-empty p { margin: 5px 0 0; color: var(--muted); font-size: 8px; }
+.session-delivery-note { margin: 0; padding: 10px 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; line-height: 1.5; }
 .archive-phase-tabs {
   display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 22px;
   border: 1px solid var(--line); border-radius: 9px; background: var(--paper-deep);
@@ -3510,6 +3525,8 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .archive-metadata { grid-template-columns: repeat(2, 1fr); }
   .archive-metadata div:nth-child(2) { border-inline-end: 0; }
   .archive-metadata div:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
+  .session-delivery-list article { grid-template-columns: 68px minmax(0, 1fr); }
+  .session-delivery-list em { grid-column: 2; justify-self: start; }
   .archive-phase-tabs button { flex-direction: column; gap: 2px; font-size: 10px; }
   .archive-secondary-column { grid-template-columns: 1fr; }
   .card-footer, .timeline-toolbar { align-items: flex-start; flex-direction: column; }

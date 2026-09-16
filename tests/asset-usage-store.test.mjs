@@ -17,6 +17,14 @@ class MemoryStorage {
     this.values.set(key, String(value));
   }
 
+  get length() {
+    return this.values.size;
+  }
+
+  key(index) {
+    return this.keys()[index] ?? null;
+  }
+
   keys() {
     return [...this.values.keys()];
   }
@@ -113,6 +121,22 @@ test("revoking a delivery retains its source and disclosure history", async () =
   assert.equal(unbound.bindings.length, 0);
   assert.equal(unbound.deliveries.length, 1);
   assert.equal(unbound.deliveries[0].status, "revoked");
+
+  store.addAssetDelivery("project-b", {
+    surface: "player-handout",
+    surfaceId: "visitor-map",
+    assetId: "asset-map",
+    assetTitle: "萨菲港地图",
+    playerTitle: "萨菲港游客地图",
+    recipient: "全体玩家",
+    campaignId: "saffi-old-friends",
+    campaignTitle: "萨菲港旧案 · 老友组",
+    sessionId: "session-2",
+    sessionLabel: "第 2 次团 · 失踪的账本",
+    version: "v2",
+  });
+  assert.equal(store.readAssetDeliveriesForSession("saffi-old-friends", "session-2").length, 2);
+  assert.equal(store.readAssetDeliveriesForSession("saffi-old-friends", "session-3").length, 0);
 });
 
 test("unreadable usage data is quarantined before a clean envelope is written", async () => {

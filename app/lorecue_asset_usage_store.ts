@@ -179,3 +179,18 @@ export function revokeAssetDelivery(projectId: string, deliveryId: string) {
     : delivery);
   return writeEnvelope({ ...current, deliveries });
 }
+
+export function readAssetDeliveriesForSession(campaignId: string, sessionId: string) {
+  if (typeof window === "undefined") return [] as LoreCueAssetDelivery[];
+  const prefix = `${LORECUE_ASSET_USAGE_FORMAT}:`;
+  const deliveries: LoreCueAssetDelivery[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (!key?.startsWith(prefix) || key.includes(":quarantine:")) continue;
+    const projectId = key.slice(prefix.length);
+    const envelope = readAssetUsageEnvelope(projectId);
+    if (!envelope) continue;
+    deliveries.push(...envelope.deliveries.filter((delivery) => delivery.campaignId === campaignId && delivery.sessionId === sessionId));
+  }
+  return deliveries.sort((left, right) => right.deliveredAt.localeCompare(left.deliveredAt));
+}
