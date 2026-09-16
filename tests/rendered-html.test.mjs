@@ -160,6 +160,10 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(library, /立绘/);
   assert.match(library, /BGM/);
   assert.match(library, /明确引用后才会进入 AI 检索范围/);
+  assert.match(library, /导入本机文件/);
+  assert.match(library, /importAssetFile/);
+  assert.match(library, /当前浏览器/);
+  assert.match(library, /剧透与披露/);
   assert.match(aiAssistant, /当前检索范围/);
   assert.match(aiAssistant, /原文依据/);
   assert.match(aiAssistant, /合理推断/);
@@ -177,6 +181,26 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(projectData, /无限/);
   assert.match(projectData, /系统无关/);
   assert.match(projectData, /自定义/);
+});
+
+test("stores real narrative files separately from project-scoped references", async () => {
+  const [assetStore, library, prototype] = await Promise.all([
+    readFile(new URL("../app/lorecue_asset_store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/narrative_asset_library.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/gm_consultation_prototype.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(assetStore, /LORECUE_ASSET_CATALOG_FORMAT/);
+  assert.match(assetStore, /indexedDB\.open/);
+  assert.match(assetStore, /saveAssetBinary/);
+  assert.match(assetStore, /setAssetTargetLink/);
+  assert.match(assetStore, /quarantine/);
+  assert.match(library, /type="file"/);
+  assert.match(library, /100 \* 1024 \* 1024/);
+  assert.match(library, /不会上传网络/);
+  assert.match(library, /取消引用不会删除原始文件/);
+  assert.match(prototype, /currentProjectId={libraryProjectId}/);
+  assert.match(prototype, /currentCampaignId={CURRENT_CAMPAIGN_ID}/);
 });
 
 test("connects the full creative workflow from project creation to version review", async () => {

@@ -36,6 +36,8 @@ export function GmConsultationPrototype() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiScope, setAiScope] = useState("潮汐来信 · 当前创作项目");
   const [aiProjectId, setAiProjectId] = useState("tide-letter");
+  const [libraryProjectId, setLibraryProjectId] = useState("tide-letter");
+  const [libraryProjectTitle, setLibraryProjectTitle] = useState("潮汐来信");
   const [selectedId, setSelectedId] = useState(prototypeScenarios[0].id);
   const [mode, setMode] = useState<ConsultationMode>("minimal");
   const [question, setQuestion] = useState(prototypeScenarios[0].question);
@@ -185,6 +187,8 @@ export function GmConsultationPrototype() {
           if (!project) return;
           setAiProjectId(project.id);
           setAiScope(`${project.title} · 当前创作项目`);
+          setLibraryProjectId(project.id);
+          setLibraryProjectTitle(project.title);
         }}
       />
 
@@ -194,7 +198,13 @@ export function GmConsultationPrototype() {
         onOpenCurrentProject={() => setActiveView("consultation")}
       />
 
-      <NarrativeAssetLibrary hidden={activeView !== "library"} />
+      <NarrativeAssetLibrary
+        hidden={activeView !== "library"}
+        currentProjectId={libraryProjectId}
+        currentProjectTitle={libraryProjectTitle}
+        currentCampaignId={CURRENT_CAMPAIGN_ID}
+        currentCampaignTitle="萨菲港旧案 · 老友组"
+      />
 
       {activeView === "consultation" ? (
         <main className="workspace" id="main-content">
