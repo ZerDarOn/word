@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CreativeProjectCreationDialog } from "./creative_project_creation_dialog";
 import {
   initialCreativeProjects,
@@ -8,6 +8,7 @@ import {
   type CreativeProject,
 } from "./creative_project_data";
 import { CreativeProjectStudio } from "./creative_project_studio";
+import { ensureProjectCatalog, saveProjectCatalog } from "./lorecue_project_store";
 
 interface CreativeWritingWorkspaceProps {
   hidden: boolean;
@@ -24,7 +25,16 @@ export function CreativeWritingWorkspace({
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [feedback, setFeedback] = useState("项目状态只保存在当前浏览器演示中，尚未接入真实文件。");
+  const [feedback, setFeedback] = useState("正在读取当前浏览器中的项目目录……");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const restoredProjects = ensureProjectCatalog(initialCreativeProjects);
+      setProjects(restoredProjects);
+      setFeedback(`项目目录 v1 已就绪 · ${restoredProjects.length} 个创作项目。`);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? null;
   const visibleProjects = useMemo(() => {
@@ -36,11 +46,15 @@ export function CreativeWritingWorkspace({
   }, [projects, query]);
 
   function handleCreateProject(project: CreativeProject) {
-    setProjects((current) => [project, ...current]);
+    setProjects((current) => {
+      const nextProjects = [project, ...current];
+      saveProjectCatalog(nextProjects);
+      return nextProjects;
+    });
     setCreationOpen(false);
     setActiveProjectId(project.id);
     onProjectFocus(project);
-    setFeedback(`已在当前演示中建立“${project.title}”。`);
+    setFeedback(`已建立“${project.title}”并写入项目目录 v1。`);
   }
 
   if (activeProject) {

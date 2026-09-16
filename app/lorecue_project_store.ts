@@ -1,5 +1,8 @@
+import type { CreativeProject } from "./creative_project_data";
+
 export const LORECUE_PROJECT_STORE_FORMAT = "lorecue-project-store";
 export const LORECUE_PROJECT_STORE_VERSION = 1;
+export const LORECUE_PROJECT_CATALOG_FORMAT = "lorecue-project-catalog";
 
 export interface LoreCueStoredWritingMetadata {
   status: "草稿" | "修订中" | "定稿";
@@ -69,6 +72,13 @@ interface EnsureProjectOptions {
 export interface EnsureProjectResult {
   envelope: LoreCueProjectEnvelope;
   source: "existing" | "legacy" | "initial";
+}
+
+export interface LoreCueProjectCatalog {
+  format: typeof LORECUE_PROJECT_CATALOG_FORMAT;
+  version: typeof LORECUE_PROJECT_STORE_VERSION;
+  updatedAt: string;
+  projects: CreativeProject[];
 }
 
 function projectStorageKey(projectId: string) {
@@ -285,4 +295,72 @@ export function addProjectRecoveryPoint(projectId: string, recoveryPoint: LoreCu
     ...current,
     recoveryPoints: [clone(recoveryPoint), ...current.recoveryPoints].slice(0, 8),
   }));
+}
+
+function isCreativeProject(value: unknown): value is CreativeProject {
+  if (!value || typeof value !== "object") return false;
+  const project = value as Partial<CreativeProject>;
+  return typeof project.id === "string"
+    && typeof project.title === "string"
+    && typeof project.summary === "string"
+    && typeof project.progress === "string"
+    && typeof project.updatedAt === "string"
+    && typeof project.documentCount === "number"
+    && typeof project.warningCount === "number"
+    && ["小说", "影视剧本", "跑团模组", "世界观"].includes(project.kind ?? "");
+}
+
+function readProjectCatalog(): LoreCueProjectCatalog | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LORECUE_PROJECT_CATALOG_FORMAT);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<LoreCueProjectCatalog>;
+    if (value.format !== LORECUE_PROJECT_CATALOG_FORMAT
+      || value.version !== LORECUE_PROJECT_STORE_VERSION
+      || !Array.isArray(value.projects)
+      || !value.projects.every(isCreativeProject)) return null;
+    return {
+      format: LORECUE_PROJECT_CATALOG_FORMAT,
+      version: LORECUE_PROJECT_STORE_VERSION,
+      updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
+      projects: value.projects,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveProjectCatalog(projects: CreativeProject[]) {
+  if (typeof window === "undefined") return;
+  const catalog: LoreCueProjectCatalog = {
+    format: LORECUE_PROJECT_CATALOG_FORMAT,
+    version: LORECUE_PROJECT_STORE_VERSION,
+    updatedAt: new Date().toISOString(),
+    projects: clone(projects),
+  };
+  window.localStorage.setItem(LORECUE_PROJECT_CATALOG_FORMAT, JSON.stringify(catalog));
+}
+
+export function ensureProjectCatalog(initialProjects: CreativeProject[]) {
+  if (typeof window === "undefined") return clone(initialProjects);
+  const existing = readProjectCatalog();
+  if (existing) {
+    const knownIds = new Set(existing.projects.map((project) => project.id));
+    const missingDefaults = initialProjects.filter((project) => !knownIds.has(project.id));
+    const merged = [...existing.projects, ...missingDefaults];
+    if (missingDefaults.length > 0) saveProjectCatalog(merged);
+    return merged;
+  }
+
+  const raw = window.localStorage.getItem(LORECUE_PROJECT_CATALOG_FORMAT);
+  if (raw) {
+    try {
+      window.localStorage.setItem(`lorecue-project-catalog-quarantine:${Date.now()}`, raw);
+    } catch {
+      // Keep the unreadable catalog in place when the browser cannot create a recovery copy.
+    }
+  }
+  saveProjectCatalog(initialProjects);
+  return clone(initialProjects);
 }

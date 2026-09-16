@@ -626,11 +626,17 @@ test("centralizes project persistence with versioned and recoverable legacy migr
   assert.match(store, /saveProjectSnapshots/);
   assert.match(store, /saveProjectConsultations/);
   assert.match(store, /addProjectRecoveryPoint/);
+  assert.match(store, /lorecue-project-catalog/);
+  assert.match(store, /ensureProjectCatalog/);
+  assert.match(store, /saveProjectCatalog/);
+  assert.match(store, /project-catalog-quarantine/);
   assert.match(studio, /项目数据仓 v1/);
   assert.match(assistant, /projectId/);
   assert.match(prototype, /aiProjectId/);
   assert.match(prototype, /onProjectFocus/);
   assert.match(workspace, /onProjectFocus\(project\)/);
+  assert.match(workspace, /项目目录 v1/);
+  assert.match(workspace, /saveProjectCatalog/);
 });
 
 test("provides an evidence-first project consistency resolution workbench", async () => {
