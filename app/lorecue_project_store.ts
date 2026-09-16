@@ -3,6 +3,7 @@ import type { CreativeProject } from "./creative_project_data";
 export const LORECUE_PROJECT_STORE_FORMAT = "lorecue-project-store";
 export const LORECUE_PROJECT_STORE_VERSION = 1;
 export const LORECUE_PROJECT_CATALOG_FORMAT = "lorecue-project-catalog";
+export const LORECUE_PROJECT_STORE_EVENT = "lorecue-project-store-change";
 
 export interface LoreCueStoredWritingMetadata {
   status: "草稿" | "修订中" | "定稿";
@@ -51,6 +52,10 @@ export interface LoreCueConsultationRecord {
   }>;
   createdAt: string;
   status: "pending" | "reviewed";
+}
+
+export interface LoreCueSessionConsultation extends LoreCueConsultationRecord {
+  projectId: string;
 }
 
 export interface LoreCueRecoveryPoint {
@@ -229,6 +234,11 @@ function writeProjectEnvelope(envelope: LoreCueProjectEnvelope) {
     ...envelope,
     updatedAt: new Date().toISOString(),
   }));
+  if (typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
+    window.dispatchEvent(new CustomEvent(LORECUE_PROJECT_STORE_EVENT, {
+      detail: { projectId: envelope.projectId },
+    }));
+  }
 }
 
 function preserveUnreadableStore(projectId: string) {
@@ -318,6 +328,41 @@ export function saveProjectSnapshots(projectId: string, snapshots: LoreCueStored
 
 export function saveProjectConsultations(projectId: string, consultations: LoreCueConsultationRecord[]) {
   return updateProjectEnvelope(projectId, (current) => ({ ...current, consultations: clone(consultations).slice(0, 50) }));
+}
+
+export function readProjectConsultationsForSession(campaignId: string, sessionId: string) {
+  if (typeof window === "undefined") return [] as LoreCueSessionConsultation[];
+  const prefix = "lorecue-project:";
+  const consultations: LoreCueSessionConsultation[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (!key?.startsWith(prefix)) continue;
+    const projectId = key.slice(prefix.length);
+    const envelope = readProjectEnvelope(projectId);
+    if (!envelope) continue;
+    consultations.push(...envelope.consultations
+      .filter((consultation) => consultation.campaignId === campaignId && consultation.sessionId === sessionId)
+      .map((consultation) => ({ ...consultation, projectId })));
+  }
+  return consultations.sort((left, right) => {
+    const leftId = Number(left.id);
+    const rightId = Number(right.id);
+    if (Number.isFinite(leftId) && Number.isFinite(rightId)) return rightId - leftId;
+    return right.createdAt.localeCompare(left.createdAt);
+  });
+}
+
+export function updateProjectConsultationStatus(
+  projectId: string,
+  consultationId: string,
+  status: LoreCueConsultationRecord["status"],
+) {
+  return updateProjectEnvelope(projectId, (current) => ({
+    ...current,
+    consultations: current.consultations.map((consultation) => consultation.id === consultationId
+      ? { ...consultation, status }
+      : consultation),
+  }));
 }
 
 export function addProjectRecoveryPoint(projectId: string, recoveryPoint: LoreCueRecoveryPoint) {

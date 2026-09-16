@@ -21,7 +21,9 @@ import {
   saveCampaignObjectives,
   saveCampaignSessions,
 } from "./lorecue_campaign_store";
+import { updateProjectConsultationStatus } from "./lorecue_project_store";
 import { useSessionAssetDeliveries } from "./use_session_asset_deliveries";
+import { useSessionConsultations } from "./use_session_consultations";
 
 interface SessionArchivePanelProps {
   campaignId: string;
@@ -80,6 +82,7 @@ export function SessionArchivePanel({
   const selectedSession =
     sessions.find((session) => session.id === selectedSessionId) ?? sessions[2];
   const sessionDeliveries = useSessionAssetDeliveries(campaignId, selectedSession.id);
+  const sessionConsultations = useSessionConsultations(campaignId, selectedSession.id);
   const filteredTimeline = useMemo(
     () =>
       timelineFilter === "全部"
@@ -224,6 +227,30 @@ export function SessionArchivePanel({
             <em>{delivery.status === "revoked" ? "已撤回但曾披露" : "仍可查看"}</em>
           </article>)}</div> : <div className="session-delivery-empty"><strong>本场尚无玩家资料发放记录</strong><p>只有明确归属到“{selectedSession.number} · {selectedSession.title}”的真实发放才会出现在这里。</p></div>}
           <p className="session-delivery-note">撤回不会让玩家忘记内容；团后复盘和 AI 知识边界仍会把历史披露视为玩家已知。</p>
+        </section>
+
+        <section className="archive-card session-consultation-summary" aria-label="本场 AI 咨询留痕">
+          <div className="archive-card-heading">
+            <div><span className="eyebrow">当时为何这样回答</span><h2>本场 AI 咨询留痕</h2></div>
+            <span className="count-pill">{sessionConsultations.length}</span>
+          </div>
+          {sessionConsultations.length > 0 ? <div className="session-consultation-list">{sessionConsultations.map((consultation) => {
+            const disclosureCount = consultation.playerDisclosures?.length ?? 0;
+            const includesRevokedDisclosure = consultation.playerDisclosures?.some((item) => item.status === "revoked");
+            return <article className={consultation.status} key={`${consultation.projectId}:${consultation.id}`}>
+              <header><span>{consultation.mode} · {consultation.speaker}</span><em>{consultation.status === "pending" ? "待复盘" : "已复盘"}</em></header>
+              <strong>{consultation.question}</strong>
+              {consultation.answer && <p className="consultation-answer">{consultation.answer}</p>}
+              {consultation.liveContext && <p><b>现场输入</b>{consultation.liveContext}</p>}
+              <small>{consultation.sourceLabels.length} 份依据 · {consultation.includesPlayerDisclosures ? `纳入 ${disclosureCount} 份玩家已知资料` : "未纳入玩家已知资料"} · {consultation.createdAt}</small>
+              {includesRevokedDisclosure && <b className="revoked-disclosure">含已撤回但曾披露资料</b>}
+              {consultation.status === "pending" && <button onClick={() => {
+                updateProjectConsultationStatus(consultation.projectId, consultation.id, "reviewed");
+                setFeedback("该条 AI 咨询已标为已复盘；建议与来源快照仍未升级成正式设定。");
+              }}>标为已复盘</button>}
+            </article>;
+          })}</div> : <div className="session-consultation-empty"><strong>本场尚无 AI 咨询留痕</strong><p>只有明确采用为草稿、并绑定到“{selectedSession.number} · {selectedSession.title}”的咨询才会进入档案。</p></div>}
+          <p className="session-consultation-note">复盘只确认“这次咨询处理过了”，不会把 AI 建议或临场补全自动升级成正式设定。</p>
         </section>
 
         {showCurrentSession && (

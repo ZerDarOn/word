@@ -113,12 +113,13 @@ test("separates rules, scenario templates, campaign runs, and sessions", async (
 });
 
 test("persists campaign catalogs, sessions, and provenance review decisions by campaign id", async () => {
-  const [store, prototype, dashboard, archivePanel, archiveData] = await Promise.all([
+  const [store, prototype, dashboard, archivePanel, archiveData, consultationHook] = await Promise.all([
     readFile(new URL("../app/lorecue_campaign_store.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/gm_consultation_prototype.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/campaign_project_dashboard.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/session_archive_panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/session_archive_data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/use_session_consultations.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(store, /lorecue-campaign-catalog/);
@@ -135,6 +136,11 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(archivePanel, /useSessionAssetDeliveries/);
   assert.match(archivePanel, /本场发放资料/);
   assert.match(archivePanel, /已撤回但曾披露/);
+  assert.match(archivePanel, /本场 AI 咨询留痕/);
+  assert.match(archivePanel, /updateProjectConsultationStatus/);
+  assert.match(archivePanel, /不会把 AI 建议或临场补全自动升级成正式设定/);
+  assert.match(consultationHook, /readProjectConsultationsForSession/);
+  assert.match(consultationHook, /LORECUE_PROJECT_STORE_EVENT/);
   assert.match(archiveData, /initialSessionRecords/);
 });
 
@@ -748,6 +754,9 @@ test("centralizes project persistence with versioned and recoverable legacy migr
   assert.match(store, /saveProjectDocuments/);
   assert.match(store, /saveProjectSnapshots/);
   assert.match(store, /saveProjectConsultations/);
+  assert.match(store, /readProjectConsultationsForSession/);
+  assert.match(store, /updateProjectConsultationStatus/);
+  assert.match(store, /LORECUE_PROJECT_STORE_EVENT/);
   assert.match(store, /campaignId\?: string/);
   assert.match(store, /playerDisclosures\?: Array/);
   assert.match(store, /addProjectRecoveryPoint/);

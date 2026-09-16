@@ -21,6 +21,14 @@ class MemoryStorage {
     this.values.delete(key);
   }
 
+  get length() {
+    return this.values.size;
+  }
+
+  key(index) {
+    return this.keys()[index] ?? null;
+  }
+
   keys() {
     return [...this.values.keys()];
   }
@@ -144,6 +152,32 @@ test("session-scoped AI consultations retain their player-knowledge provenance",
   assert.equal(consultation.includesPlayerDisclosures, true);
   assert.equal(consultation.playerDisclosures[0].status, "revoked");
   assert.equal(consultation.playerDisclosures[0].title, "港务处值班名册（残页）");
+
+  store.saveProjectConsultations("project-b", [{
+    ...consultation,
+    id: "consult-second-project",
+    question: "另一个创作项目中的本场咨询",
+  }]);
+  store.saveProjectConsultations("project-c", [{
+    ...consultation,
+    id: "consult-other-campaign",
+    campaignId: "saffi-beginners",
+    campaignTitle: "萨菲港旧案 · 新手组",
+  }]);
+
+  const sessionConsultations = store.readProjectConsultationsForSession("saffi-old-friends", "session-3");
+  assert.equal(sessionConsultations.length, 2);
+  assert.deepEqual(
+    new Set(sessionConsultations.map((item) => item.projectId)),
+    new Set(["saffi-module", "project-b"]),
+  );
+  assert.equal(store.readProjectConsultationsForSession("saffi-beginners", "session-3").length, 1);
+  assert.equal(store.readProjectConsultationsForSession("saffi-old-friends", "session-2").length, 0);
+
+  store.updateProjectConsultationStatus("saffi-module", "consult-session-3", "reviewed");
+  const reviewed = store.readProjectConsultationsForSession("saffi-old-friends", "session-3");
+  assert.equal(reviewed.find((item) => item.id === "consult-session-3").status, "reviewed");
+  assert.equal(reviewed.find((item) => item.id === "consult-second-project").status, "pending");
 });
 
 test("unreadable unified project data is quarantined before a fresh envelope is created", async () => {
