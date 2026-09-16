@@ -85,7 +85,10 @@ test("revoking a delivery retains its source and disclosure history", async () =
     assetTitle: "值班名册原件",
     playerTitle: "值班名册残页",
     recipient: "全体玩家",
-    sessionLabel: "第 02 次团",
+    campaignId: "saffi-old-friends",
+    campaignTitle: "萨菲港旧案 · 老友组",
+    sessionId: "session-2",
+    sessionLabel: "第 2 次团 · 失踪的账本",
     version: "玩家版本 v1",
   });
   const deliveryId = delivered.deliveries[0].id;
@@ -95,6 +98,8 @@ test("revoking a delivery retains its source and disclosure history", async () =
   assert.equal(revoked.deliveries[0].status, "revoked");
   assert.equal(revoked.deliveries[0].assetId, "asset-roster");
   assert.equal(revoked.deliveries[0].recipient, "全体玩家");
+  assert.equal(revoked.deliveries[0].campaignId, "saffi-old-friends");
+  assert.equal(revoked.deliveries[0].sessionId, "session-2");
   assert.ok(revoked.deliveries[0].revokedAt);
 
   store.saveAssetBinding("project-a", {

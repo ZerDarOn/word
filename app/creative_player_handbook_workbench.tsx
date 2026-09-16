@@ -12,6 +12,7 @@ import {
 import type { LoreCueAssetRecord } from "./lorecue_asset_store";
 import { useProjectAssetUsage } from "./use_project_asset_usage";
 import { useProjectAssets } from "./use_project_assets";
+import { useCampaignDeliveryTarget } from "./use_campaign_delivery_target";
 
 type HandbookTab = "玩家手册总览" | "内容编辑" | "公开条件" | "玩家视角预览" | "剧透检查" | "发放记录";
 type ReleaseState = "开场公开" | "条件公开" | "已发放" | "主持人隐藏";
@@ -83,6 +84,7 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
   const linkedAssets = useProjectAssets(project.id, ["地图", "文档", "立绘"]);
   const playerSafeAssets = linkedAssets.filter((asset) => asset.visibility !== "主持人私有");
   const [usage, setUsage] = useProjectAssetUsage(project.id);
+  const deliveryTarget = useCampaignDeliveryTarget(project.title);
   const selected = handouts.find((handout) => handout.title === selectedTitle) ?? handouts[0];
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "player-handout" && binding.surfaceId === selected.title);
   const boundSource = currentBinding ? playerSafeAssets.find((asset) => asset.id === currentBinding.assetId) : undefined;
@@ -130,6 +132,10 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
       onFeedback(bindingIsStale ? "公开来源引用已经失效，请重新绑定后再发放。" : "请先绑定一份非主持人私有的来源素材，再确认发放。");
       return;
     }
+    if (!deliveryTarget.selectedCampaign || !deliveryTarget.selectedSession) {
+      onFeedback("请先选择实际团项目和场次；模组发布记录不能代替真实玩家披露。");
+      return;
+    }
     const next = addAssetDelivery(project.id, {
       surface: "player-handout",
       surfaceId: handout.title,
@@ -137,12 +143,15 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
       assetTitle: currentBinding.assetTitle,
       playerTitle: handout.title,
       recipient: handout.audience,
-      sessionLabel: "模组发布 · 未指定场次",
+      campaignId: deliveryTarget.selectedCampaign.id,
+      campaignTitle: deliveryTarget.selectedCampaign.name,
+      sessionId: deliveryTarget.selectedSession.id,
+      sessionLabel: `${deliveryTarget.selectedSession.number} · ${deliveryTarget.selectedSession.title}`,
       version: handout.revision.split(" · ")[0] || "未标版本",
     });
     setUsage(next);
     setActiveTab("发放记录");
-    onFeedback(`已记录向“${handout.audience}”发放“${handout.title}”；尚未指定实际团与场次。`);
+    onFeedback(`已记录“${deliveryTarget.selectedCampaign.name} / ${deliveryTarget.selectedSession.number}”向“${handout.audience}”发放“${handout.title}”。`);
   }
 
   function handleRevokeHandout(delivery: LoreCueAssetDelivery) {
@@ -162,11 +171,16 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
         <div><strong>公开来源素材</strong><span>{playerSafeAssets.length} 条可用于玩家版本 · 当前：{bindingIsStale ? `失效引用 · ${currentBinding?.assetTitle}` : currentBinding?.assetTitle ?? "未绑定"}</span>{currentBinding && <button className="asset-clear-binding" onClick={clearHandoutSource}>解除绑定</button>}</div>
         <div>{playerSafeAssets.length > 0 ? playerSafeAssets.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindHandoutSource(asset)}>{asset.title}<small>{asset.visibility} · {asset.kind}</small></button>) : <p>当前项目没有玩家可见或按场次解锁的地图、文档或立绘。</p>}</div>
       </section>
+      <section className="delivery-target-strip" aria-label="玩家手册实际发放归属">
+        <div><strong>实际发放归属</strong><span>必须先选团项目，再选具体场次</span></div>
+        <label>团项目<select value={deliveryTarget.campaignId} onChange={(event) => deliveryTarget.selectCampaign(event.target.value)}><option value="">请选择</option>{deliveryTarget.campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}</select></label>
+        <label>场次<select value={deliveryTarget.sessionId} disabled={!deliveryTarget.campaignId} onChange={(event) => deliveryTarget.selectSession(event.target.value)}><option value="">请选择</option>{deliveryTarget.sessions.map((session) => <option key={session.id} value={session.id}>{session.number} · {session.title}</option>)}</select></label>
+      </section>
 
       <section className="handbook-metrics" aria-label="玩家手册概况">
         <article><strong>{playerSafeAssets.length}</strong><span>可用来源素材</span><small>已排除主持人私有资料</small></article>
         <article><strong>3</strong><span>开场公开</span><small>无需行动即可查看</small></article>
-        <article><strong>{deliveries.filter((delivery) => delivery.status === "active").length}</strong><span>本地已发放</span><small>未指定场次也明确标注</small></article>
+        <article><strong>{deliveries.filter((delivery) => delivery.status === "active").length}</strong><span>本地已发放</span><small>按团项目与场次隔离</small></article>
         <article className="risk"><strong>2</strong><span>剧透提醒</span><small>隐藏名称 1 · 地图锚点 1</small></article>
       </section>
 
@@ -198,7 +212,7 @@ function HandbookOverview({ handout, onFeedback, onDeliver }: { handout: Handout
 }
 
 function HandbookDeliveryLog({ deliveries, onRevoke, onFeedback }: { deliveries: LoreCueAssetDelivery[]; onRevoke: (delivery: LoreCueAssetDelivery) => void; onFeedback: (message: string) => void }) {
-  return <div className="handbook-delivery-log"><header><strong>发放记录</strong><p>模组阶段未指定实际团或场次时会明确标注，不把创作记录伪装成真实跑团历史。</p></header>{deliveries.length > 0 ? <section>{deliveries.map((delivery) => <article className={delivery.status === "revoked" ? "revoked" : ""} key={delivery.id}><time>{delivery.sessionLabel}</time><div><strong>{delivery.playerTitle}</strong><p>{delivery.recipient} · {delivery.version} · 素材 {delivery.assetId ?? "无绑定"}</p></div><em>{delivery.status === "revoked" ? "已撤回" : "仍可查看"}</em><button onClick={() => delivery.status === "active" ? onRevoke(delivery) : onFeedback("该记录已经撤回；历史披露仍保留。")}>{delivery.status === "active" ? "撤回访问" : "查看记录"}</button></article>)}</section> : <div className="handbook-delivery-empty"><strong>尚无真实发放记录</strong><p>绑定公开来源并从总览确认发放后，具体版本会出现在这里。</p></div>}<aside><strong>创作记录不等于场次记录</strong><p>建立实际团后，应再选择团项目与场次；当前仅证明这份模组玩家资料曾被发布。</p></aside></div>;
+  return <div className="handbook-delivery-log"><header><strong>发放记录</strong><p>每条记录同时保存团项目与场次身份，同一模组的不同玩家组不会串线。</p></header>{deliveries.length > 0 ? <section>{deliveries.map((delivery) => <article className={delivery.status === "revoked" ? "revoked" : ""} key={delivery.id}><time>{delivery.campaignTitle ?? "旧记录 · 未指定团"}<small>{delivery.sessionLabel}</small></time><div><strong>{delivery.playerTitle}</strong><p>{delivery.recipient} · {delivery.version} · 素材 {delivery.assetId ?? "无绑定"}</p></div><em>{delivery.status === "revoked" ? "已撤回" : "仍可查看"}</em><button onClick={() => delivery.status === "active" ? onRevoke(delivery) : onFeedback("该记录已经撤回；历史披露仍保留。")}>{delivery.status === "active" ? "撤回访问" : "查看记录"}</button></article>)}</section> : <div className="handbook-delivery-empty"><strong>尚无真实发放记录</strong><p>选择团项目与场次、绑定公开来源并确认发放后，具体版本会出现在这里。</p></div>}<aside><strong>模组与团历史分开</strong><p>发放记录按团项目和场次归档；同一模组开多个团，也不会共享玩家已知信息。</p></aside></div>;
 }
 
 function HandoutEditor({ handout, onChange }: { handout: HandoutRecord; onChange: <Key extends keyof HandoutRecord>(key: Key, value: HandoutRecord[Key]) => void }) {

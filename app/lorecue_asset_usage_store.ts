@@ -23,6 +23,9 @@ export interface LoreCueAssetDelivery {
   assetTitle?: string;
   playerTitle: string;
   recipient: string;
+  campaignId?: string;
+  campaignTitle?: string;
+  sessionId?: string;
   sessionLabel: string;
   version: string;
   deliveredAt: string;
@@ -82,6 +85,9 @@ function isDelivery(value: unknown): value is LoreCueAssetDelivery {
     && typeof delivery.surfaceId === "string"
     && typeof delivery.playerTitle === "string"
     && typeof delivery.recipient === "string"
+    && (delivery.campaignId === undefined || typeof delivery.campaignId === "string")
+    && (delivery.campaignTitle === undefined || typeof delivery.campaignTitle === "string")
+    && (delivery.sessionId === undefined || typeof delivery.sessionId === "string")
     && typeof delivery.sessionLabel === "string"
     && typeof delivery.version === "string"
     && typeof delivery.deliveredAt === "string"

@@ -548,7 +548,10 @@ test("builds spoiler-safe player handbooks with conditional releases", async () 
   assert.match(handbookWorkbench, /saveAssetBinding/);
   assert.match(handbookWorkbench, /addAssetDelivery/);
   assert.match(handbookWorkbench, /revokeAssetDelivery/);
-  assert.match(handbookWorkbench, /模组发布 · 未指定场次/);
+  assert.match(handbookWorkbench, /useCampaignDeliveryTarget/);
+  assert.match(handbookWorkbench, /campaignId:/);
+  assert.match(handbookWorkbench, /sessionId:/);
+  assert.match(handbookWorkbench, /实际发放归属/);
   assert.match(handbookWorkbench, /发放记录/);
   assert.match(narrativeViews, /<CreativePlayerHandbookWorkbench/);
 });
@@ -596,6 +599,8 @@ test("manages player attachments as spoiler-safe session handouts", async () => 
   assert.match(attachmentWorkbench, /主持人原件来源/);
   assert.match(attachmentWorkbench, /addAssetDelivery/);
   assert.match(attachmentWorkbench, /素材 ID/);
+  assert.match(attachmentWorkbench, /useCampaignDeliveryTarget/);
+  assert.match(attachmentWorkbench, /实际发放归属/);
   assert.match(narrativeViews, /<CreativePlayerAttachmentWorkbench/);
 });
 

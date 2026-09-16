@@ -12,6 +12,7 @@ import {
 import type { LoreCueAssetRecord } from "./lorecue_asset_store";
 import { useProjectAssetUsage } from "./use_project_asset_usage";
 import { useProjectAssets } from "./use_project_assets";
+import { useCampaignDeliveryTarget } from "./use_campaign_delivery_target";
 
 type AttachmentTab = "玩家附件总览" | "主持人原件" | "玩家版本" | "公开条件" | "发放记录";
 type AttachmentState = "未公开" | "可发放" | "已发放" | "已撤回";
@@ -92,6 +93,7 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
   const [previewPublic, setPreviewPublic] = useState(true);
   const sourceAssets = useProjectAssets(project.id, ["地图", "文档", "立绘"]);
   const [usage, setUsage] = useProjectAssetUsage(project.id);
+  const deliveryTarget = useCampaignDeliveryTarget(project.title);
   const selected = attachments.find((attachment) => attachment.title === selectedTitle) ?? attachments[0];
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "player-attachment" && binding.surfaceId === selected.title);
   const boundSource = currentBinding ? sourceAssets.find((asset) => asset.id === currentBinding.assetId) : undefined;
@@ -135,6 +137,10 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
       onFeedback(bindingIsStale ? "主持人原件引用已经失效，请重新绑定后再发放。" : "请先绑定一份资料仓原件，再确认发放；演示文本不能冒充真实附件来源。");
       return;
     }
+    if (!deliveryTarget.selectedCampaign || !deliveryTarget.selectedSession) {
+      onFeedback("请先选择实际团项目和场次，再记录玩家附件发放。");
+      return;
+    }
     const next = addAssetDelivery(project.id, {
       surface: "player-attachment",
       surfaceId: attachment.title,
@@ -142,11 +148,14 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
       assetTitle: currentBinding.assetTitle,
       playerTitle: attachment.publicTitle,
       recipient: attachment.recipient,
-      sessionLabel: attachment.scene,
+      campaignId: deliveryTarget.selectedCampaign.id,
+      campaignTitle: deliveryTarget.selectedCampaign.name,
+      sessionId: deliveryTarget.selectedSession.id,
+      sessionLabel: `${deliveryTarget.selectedSession.number} · ${deliveryTarget.selectedSession.title}`,
       version: "玩家版本 v1",
     });
     setUsage(next);
-    onFeedback(`已记录向“${attachment.recipient}”发放“${attachment.publicTitle}”；记录保留素材 ID ${currentBinding.assetId}。`);
+    onFeedback(`已记录“${deliveryTarget.selectedCampaign.name} / ${deliveryTarget.selectedSession.number}”向“${attachment.recipient}”发放“${attachment.publicTitle}”。`);
   }
 
   function handleRevokeDelivery(delivery: LoreCueAssetDelivery) {
@@ -166,6 +175,11 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
       <section className={`workbench-asset-strip ${bindingIsStale ? "has-stale-binding" : ""}`} aria-label="玩家附件原件素材">
         <div><strong>主持人原件来源</strong><span>{sourceAssets.length} 条项目素材 · 当前：{bindingIsStale ? `失效引用 · ${currentBinding?.assetTitle}` : currentBinding?.assetTitle ?? "未绑定"}</span>{currentBinding && <button className="asset-clear-binding" onClick={clearAttachmentSource}>解除绑定</button>}</div>
         <div>{sourceAssets.length > 0 ? sourceAssets.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindAttachmentSource(asset)}>{asset.title}<small>{asset.kind} · {asset.visibility}</small></button>) : <p>当前项目没有可用地图、文档或立绘；请先到资料库建立引用。</p>}</div>
+      </section>
+      <section className="delivery-target-strip" aria-label="玩家附件实际发放归属">
+        <div><strong>实际发放归属</strong><span>同一模组的不同团项目互不共享披露历史</span></div>
+        <label>团项目<select value={deliveryTarget.campaignId} onChange={(event) => deliveryTarget.selectCampaign(event.target.value)}><option value="">请选择</option>{deliveryTarget.campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}</select></label>
+        <label>场次<select value={deliveryTarget.sessionId} disabled={!deliveryTarget.campaignId} onChange={(event) => deliveryTarget.selectSession(event.target.value)}><option value="">请选择</option>{deliveryTarget.sessions.map((session) => <option key={session.id} value={session.id}>{session.number} · {session.title}</option>)}</select></label>
       </section>
       <section className="attachment-metrics" aria-label="玩家附件概况">
         <article><strong>{sourceAssets.length}</strong><span>项目原件</span><small>只统计明确引用素材</small></article>
@@ -213,5 +227,5 @@ function AttachmentRelease({ attachment, onChange, onFeedback, onDeliver }: { at
 }
 
 function AttachmentDeliveryLog({ deliveries, onRevoke, onFeedback }: { deliveries: LoreCueAssetDelivery[]; onRevoke: (delivery: LoreCueAssetDelivery) => void; onFeedback: (message: string) => void }) {
-  return <div className="attachment-delivery-log"><header><strong>发放记录</strong><p>记录玩家当时真正看到的版本；撤回不会抹除已经发生的事实。</p></header>{deliveries.length > 0 && <><h4 className="delivery-local-title">当前浏览器新增记录</h4><section>{deliveries.map((delivery) => <article className={delivery.status === "revoked" ? "revoked" : ""} key={delivery.id}><time>{delivery.sessionLabel}</time><div><strong>{delivery.playerTitle}</strong><p>{delivery.recipient} · {delivery.version} · 素材 {delivery.assetId ?? "无绑定"}</p></div><em>{delivery.status === "revoked" ? "已撤回" : "仍可查看"}</em><button onClick={() => delivery.status === "active" ? onRevoke(delivery) : onFeedback("该发放记录已经撤回；历史仍然保留。")}>{delivery.status === "active" ? "撤回访问" : "查看记录"}</button></article>)}</section></>}<h4 className="delivery-local-title">演示场次历史</h4><section><article><time>第 02 次团 · 21:14</time><div><strong>港务处值班名册（残页）</strong><p>发给全体玩家 · 玩家版本 v2 · 主持人手动发放</p></div><em>仍可查看</em><button onClick={() => onFeedback("已打开第 02 次团的附件快照。")}>打开快照</button></article><article className="revoked"><time>第 03 次团 · 20:47</time><div><strong>未署名的短信</strong><p>仅发给茗 · 玩家版本 v1 · 21:03 撤回</p></div><em>已撤回</em><button onClick={() => onFeedback("已打开撤回原因与原始发放记录。")}>查看记录</button></article></section><aside><strong>撤回不会抹除</strong><p>系统只停止后续访问，并明确记录玩家曾经看过什么；AI 在复盘时仍会把它视为已披露信息。</p></aside></div>;
+  return <div className="attachment-delivery-log"><header><strong>发放记录</strong><p>记录玩家当时真正看到的版本；撤回不会抹除已经发生的事实。</p></header>{deliveries.length > 0 && <><h4 className="delivery-local-title">当前浏览器新增记录</h4><section>{deliveries.map((delivery) => <article className={delivery.status === "revoked" ? "revoked" : ""} key={delivery.id}><time>{delivery.campaignTitle ?? "旧记录 · 未指定团"}<small>{delivery.sessionLabel}</small></time><div><strong>{delivery.playerTitle}</strong><p>{delivery.recipient} · {delivery.version} · 素材 {delivery.assetId ?? "无绑定"}</p></div><em>{delivery.status === "revoked" ? "已撤回" : "仍可查看"}</em><button onClick={() => delivery.status === "active" ? onRevoke(delivery) : onFeedback("该发放记录已经撤回；历史仍然保留。")}>{delivery.status === "active" ? "撤回访问" : "查看记录"}</button></article>)}</section></>}<h4 className="delivery-local-title">演示场次历史</h4><section><article><time>第 02 次团 · 21:14</time><div><strong>港务处值班名册（残页）</strong><p>发给全体玩家 · 玩家版本 v2 · 主持人手动发放</p></div><em>仍可查看</em><button onClick={() => onFeedback("已打开第 02 次团的附件快照。")}>打开快照</button></article><article className="revoked"><time>第 03 次团 · 20:47</time><div><strong>未署名的短信</strong><p>仅发给茗 · 玩家版本 v1 · 21:03 撤回</p></div><em>已撤回</em><button onClick={() => onFeedback("已打开撤回原因与原始发放记录。")}>查看记录</button></article></section><aside><strong>撤回不会抹除</strong><p>系统只停止后续访问，并明确记录玩家曾经看过什么；AI 在复盘时仍会把它视为已披露信息。</p></aside></div>;
 }
