@@ -76,6 +76,10 @@ test("includes the session archive experience and a Python launcher", async () =
   assert.match(archivePanel, /团后复盘/);
   assert.match(archivePanel, /handleSaveBrief/);
   assert.match(archivePanel, /handleCreateSession/);
+  assert.match(archivePanel, /ensureCampaignArchive/);
+  assert.match(archivePanel, /saveCampaignBrief/);
+  assert.match(archivePanel, /saveCampaignObjectives/);
+  assert.match(archivePanel, /handleSaveDraft/);
   assert.match(archivePanel, /aria-live="polite"/);
   assert.match(archiveData, /第 3 次团/);
   assert.match(archiveData, /2026-07-29/);
@@ -96,6 +100,8 @@ test("separates rules, scenario templates, campaign runs, and sessions", async (
   assert.match(prototype, /<CampaignProjectDashboard/);
   assert.match(dashboard, /我的团/);
   assert.match(dashboard, /handleCreateProject/);
+  assert.match(dashboard, /ensureCampaignCatalog/);
+  assert.match(dashboard, /saveCampaignCatalog/);
   assert.match(dashboard, /剧本模板/);
   assert.match(dashboard, /团项目/);
   assert.match(dashboard, /aria-live="polite"/);
@@ -104,6 +110,29 @@ test("separates rules, scenario templates, campaign runs, and sessions", async (
   assert.match(projectData, /CoJ/);
   assert.match(projectData, /萨菲港旧案 · 老友组/);
   assert.match(projectData, /萨菲港旧案 · 新手组/);
+});
+
+test("persists campaign catalogs, sessions, and provenance review decisions by campaign id", async () => {
+  const [store, prototype, dashboard, archivePanel, archiveData] = await Promise.all([
+    readFile(new URL("../app/lorecue_campaign_store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/gm_consultation_prototype.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/campaign_project_dashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/session_archive_panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/session_archive_data.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(store, /lorecue-campaign-catalog/);
+  assert.match(store, /lorecue-campaign-archive/);
+  assert.match(store, /campaignId/);
+  assert.match(store, /syncPendingReviewCount/);
+  assert.match(store, /saveCampaignRecords/);
+  assert.match(store, /saveCampaignSessions/);
+  assert.match(store, /saveCampaignDraft/);
+  assert.match(prototype, /CURRENT_CAMPAIGN_ID/);
+  assert.match(prototype, /saveCampaignRecords/);
+  assert.match(dashboard, /currentPendingReviews/);
+  assert.match(archivePanel, /场次数据仓 v1/);
+  assert.match(archiveData, /initialSessionRecords/);
 });
 
 test("includes creation, library, and provenance-aware AI workspaces", async () => {

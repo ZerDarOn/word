@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   historicalSessionSnapshots,
   initialBrief,
@@ -14,8 +14,16 @@ import {
   type SessionSummary,
   type TimelineKind,
 } from "./session_archive_data";
+import {
+  ensureCampaignArchive,
+  saveCampaignBrief,
+  saveCampaignDraft,
+  saveCampaignObjectives,
+  saveCampaignSessions,
+} from "./lorecue_campaign_store";
 
 interface SessionArchivePanelProps {
+  campaignId: string;
   records: SessionRecord[];
   onConfirmRecord: (id: number, status: ReviewStatus) => void;
   onReturnToConsultation: () => void;
@@ -37,6 +45,7 @@ function sessionStatusClass(status: SessionSummary["status"]) {
 }
 
 export function SessionArchivePanel({
+  campaignId,
   records,
   onConfirmRecord,
   onReturnToConsultation,
@@ -49,7 +58,23 @@ export function SessionArchivePanel({
     () => new Set(sessionObjectives.filter((item) => item.complete).map((item) => item.id)),
   );
   const [timelineFilter, setTimelineFilter] = useState<"全部" | TimelineKind>("全部");
-  const [feedback, setFeedback] = useState("这是前端样机；修改只保留到本次页面关闭前。");
+  const [draftTitle, setDraftTitle] = useState("未命名场次");
+  const [draftPlan, setDraftPlan] = useState("承接灰潮号靠港线索，等待团后复盘完成后补充。");
+  const [feedback, setFeedback] = useState("正在读取本团的场次档案……");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const archive = ensureCampaignArchive(campaignId);
+      setSessions(archive.sessions);
+      setSelectedSessionId(archive.selectedSessionId);
+      setBrief(archive.brief);
+      setCompletedObjectives(new Set(archive.completedObjectiveIds));
+      setDraftTitle(archive.draftTitle);
+      setDraftPlan(archive.draftPlan);
+      setFeedback(`场次数据仓 v1 已就绪 · ${archive.sessions.length} 次团 · ${archive.records.length} 条临场记录。`);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [campaignId]);
 
   const selectedSession =
     sessions.find((session) => session.id === selectedSessionId) ?? sessions[2];
@@ -65,13 +90,15 @@ export function SessionArchivePanel({
   const showCurrentSession = selectedSessionId === "session-3";
 
   function handleSaveBrief() {
-    setFeedback("团前简报已在当前样机中更新。正式版会保留修改历史和版本来源。");
+    saveCampaignBrief(campaignId, brief);
+    setFeedback("团前简报已保存到本团场次数据仓，并保留所属场次边界。");
   }
 
   function handleCreateSession() {
     const existingDraft = sessions.find((session) => session.status === "草稿");
     if (existingDraft) {
       setSelectedSessionId(existingDraft.id);
+      saveCampaignSessions(campaignId, sessions, existingDraft.id);
       setFeedback("已切换到尚未填写的第 4 次团草稿。");
       return;
     }
@@ -84,9 +111,15 @@ export function SessionArchivePanel({
       time: "时间未定",
       status: "草稿",
     };
-    setSessions((current) => [...current, draft]);
+    setSessions((current) => {
+      const nextSessions = [...current, draft];
+      saveCampaignSessions(campaignId, nextSessions, draft.id);
+      return nextSessions;
+    });
     setSelectedSessionId(draft.id);
-    setFeedback("已新建第 4 次团草稿；这是演示状态，不会写入硬盘。");
+    setDraftTitle("未命名场次");
+    setDraftPlan("承接灰潮号靠港线索，等待团后复盘完成后补充。");
+    setFeedback("已新建第 4 次团草稿并保存到本团场次数据仓。");
   }
 
   function handleToggleObjective(id: string) {
@@ -94,8 +127,18 @@ export function SessionArchivePanel({
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      saveCampaignObjectives(campaignId, [...next]);
       return next;
     });
+  }
+
+  function handleSaveDraft() {
+    const nextSessions = sessions.map((session) => session.id === selectedSessionId
+      ? { ...session, title: draftTitle.trim() || "未命名场次" }
+      : session);
+    setSessions(nextSessions);
+    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId);
+    setFeedback("下一次团草稿已保存；不会改动已归档的历史场次。");
   }
 
   function handlePhaseChange(phase: SessionPhase) {
@@ -119,6 +162,7 @@ export function SessionArchivePanel({
               className={`history-card ${selectedSessionId === session.id ? "active" : ""}`}
               onClick={() => {
                 setSelectedSessionId(session.id);
+                saveCampaignSessions(campaignId, sessions, session.id);
                 setFeedback(`已查看${session.number}“${session.title}”。`);
               }}
               aria-pressed={selectedSessionId === session.id}
@@ -218,9 +262,9 @@ export function SessionArchivePanel({
               <h2>先留一张空白场次卡</h2>
               <p>日期、参与者和承接内容都可以等确认后再补，不会污染已经归档的第 3 次团。</p>
             </div>
-            <label>暂定标题<input defaultValue="未命名场次" /></label>
-            <label>准备推进到哪里<textarea rows={4} defaultValue="承接灰潮号靠港线索，等待团后复盘完成后补充。" /></label>
-            <button onClick={() => setFeedback("第 4 次团草稿已在当前样机中更新。")}>保存草稿</button>
+            <label>暂定标题<input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></label>
+            <label>准备推进到哪里<textarea rows={4} value={draftPlan} onChange={(event) => setDraftPlan(event.target.value)} /></label>
+            <button onClick={handleSaveDraft}>保存草稿</button>
           </section>
         )}
 

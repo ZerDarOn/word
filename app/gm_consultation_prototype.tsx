@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   prototypeScenarios,
   type ConsultationMode,
@@ -11,7 +11,10 @@ import { CreativeWritingWorkspace } from "./creative_writing_workspace";
 import { LoreCueAiAssistant } from "./lorecue_ai_assistant";
 import { NarrativeAssetLibrary } from "./narrative_asset_library";
 import { SessionArchivePanel } from "./session_archive_panel";
-import type { ReviewStatus, SessionRecord } from "./session_archive_data";
+import { initialSessionRecords, type ReviewStatus, type SessionRecord } from "./session_archive_data";
+import { ensureCampaignArchive, saveCampaignRecords } from "./lorecue_campaign_store";
+
+const CURRENT_CAMPAIGN_ID = "saffi-old-friends";
 
 const modeLabels: Record<ConsultationMode, string> = {
   strict: "严格依据",
@@ -40,15 +43,14 @@ export function GmConsultationPrototype() {
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [feedback, setFeedback] = useState("选择一个棘手情况，看看咨询台如何拆解。");
-  const [records, setRecords] = useState<SessionRecord[]>([
-    {
-      id: 1,
-      text: "伊芙琳撒谎时左手出现轻微震颤。",
-      kind: "happened",
-      scenario: "临场加了一个紧张动作",
-      status: "待确认",
-    },
-  ]);
+  const [records, setRecords] = useState<SessionRecord[]>(initialSessionRecords);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setRecords(ensureCampaignArchive(CURRENT_CAMPAIGN_ID).records);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const scenario = useMemo(
     () => prototypeScenarios.find((item) => item.id === selectedId) ?? prototypeScenarios[0],
@@ -72,7 +74,11 @@ export function GmConsultationPrototype() {
       scenario: scenario.title,
       status: "待确认",
     };
-    setRecords((current) => [nextRecord, ...current]);
+    setRecords((current) => {
+      const nextRecords = [nextRecord, ...current];
+      saveCampaignRecords(CURRENT_CAMPAIGN_ID, nextRecords);
+      return nextRecords;
+    });
     setFeedback(
       scenario.recordKind === "spoken"
         ? "已记为主持人实际说出的内容，团后待确认。"
@@ -90,9 +96,11 @@ export function GmConsultationPrototype() {
   }
 
   function handleConfirmRecord(id: number, status: ReviewStatus) {
-    setRecords((current) =>
-      current.map((record) => (record.id === id ? { ...record, status } : record)),
-    );
+    setRecords((current) => {
+      const nextRecords = current.map((record) => (record.id === id ? { ...record, status } : record));
+      saveCampaignRecords(CURRENT_CAMPAIGN_ID, nextRecords);
+      return nextRecords;
+    });
     setFeedback(`团后归档已更新为“${status}”。`);
   }
 
@@ -182,6 +190,7 @@ export function GmConsultationPrototype() {
 
       <CampaignProjectDashboard
         hidden={activeView !== "projects"}
+        currentPendingReviews={pendingCount}
         onOpenCurrentProject={() => setActiveView("consultation")}
       />
 
@@ -390,6 +399,7 @@ export function GmConsultationPrototype() {
         </main>
       ) : activeView === "archive" ? (
         <SessionArchivePanel
+          campaignId={CURRENT_CAMPAIGN_ID}
           records={records}
           onConfirmRecord={handleConfirmRecord}
           onReturnToConsultation={() => setActiveView("consultation")}

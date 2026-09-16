@@ -12,6 +12,16 @@ export type SessionRecord = {
   status: ReviewStatus;
 };
 
+export const initialSessionRecords: SessionRecord[] = [
+  {
+    id: 1,
+    text: "伊芙琳撒谎时左手出现轻微震颤。",
+    kind: "happened",
+    scenario: "临场加了一个紧张动作",
+    status: "待确认",
+  },
+];
+
 export type SessionSummary = {
   id: string;
   number: string;

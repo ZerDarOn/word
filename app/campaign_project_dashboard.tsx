@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   initialCampaignProjects,
   projectStructure,
   type CampaignProject,
   type GameSystem,
 } from "./campaign_project_data";
+import { ensureCampaignCatalog, saveCampaignCatalog } from "./lorecue_campaign_store";
 
 interface CampaignProjectDashboardProps {
   hidden: boolean;
+  currentPendingReviews: number;
   onOpenCurrentProject: () => void;
 }
 
@@ -35,6 +37,7 @@ function systemClass(system: GameSystem) {
 
 export function CampaignProjectDashboard({
   hidden,
+  currentPendingReviews,
   onOpenCurrentProject,
 }: CampaignProjectDashboardProps) {
   const [projects, setProjects] = useState(initialCampaignProjects);
@@ -46,26 +49,39 @@ export function CampaignProjectDashboard({
   const [draftTemplate, setDraftTemplate] = useState("");
   const [draftRunName, setDraftRunName] = useState("");
   const [feedback, setFeedback] = useState(
-    "每个团项目都有独立的角色、设定、场次和 AI 检索范围。",
+    "正在读取团项目目录……",
   );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const restored = ensureCampaignCatalog(initialCampaignProjects);
+      setProjects(restored);
+      setFeedback(`团项目目录 v1 已就绪 · ${restored.length} 个独立团项目。`);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const displayProjects = useMemo(() => projects.map((project) => project.id === "saffi-old-friends"
+    ? { ...project, pendingReviews: currentPendingReviews }
+    : project), [currentPendingReviews, projects]);
 
   const visibleProjects = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
-    return projects.filter((project) => {
+    return displayProjects.filter((project) => {
       const matchesFilter = filter === "全部" || project.system === filter;
       const searchable = `${project.name} ${project.templateTitle} ${project.system}`.toLocaleLowerCase(
         "zh-CN",
       );
       return matchesFilter && (!normalizedQuery || searchable.includes(normalizedQuery));
     });
-  }, [filter, projects, query]);
+  }, [displayProjects, filter, query]);
 
-  const previewProject = projects.find((project) => project.id === previewProjectId) ?? null;
-  const pendingReviewCount = projects.reduce(
+  const previewProject = displayProjects.find((project) => project.id === previewProjectId) ?? null;
+  const pendingReviewCount = displayProjects.reduce(
     (total, project) => total + project.pendingReviews,
     0,
   );
-  const systemCount = new Set(projects.map((project) => project.system)).size;
+  const systemCount = new Set(displayProjects.map((project) => project.system)).size;
 
   function handleCreateProject() {
     const templateTitle = draftTemplate.trim();
@@ -90,12 +106,16 @@ export function CampaignProjectDashboard({
       pendingReviews: 0,
       currentStage: "团前准备 · 尚未填写",
     };
-    setProjects((current) => [newProject, ...current]);
+    setProjects((current) => {
+      const nextProjects = [newProject, ...current];
+      saveCampaignCatalog(nextProjects);
+      return nextProjects;
+    });
     setPreviewProjectId(newProject.id);
     setShowCreateForm(false);
     setDraftTemplate("");
     setDraftRunName("");
-    setFeedback(`已在当前样机中新建“${newProject.name}”。`);
+    setFeedback(`已新建“${newProject.name}”并写入团项目目录 v1。`);
   }
 
   function handlePreviewProject(project: CampaignProject) {
@@ -118,7 +138,7 @@ export function CampaignProjectDashboard({
       </section>
 
       <section className="campaign-summary" aria-label="团项目概况">
-        <div><strong>{projects.length}</strong><span>个团项目</span></div>
+            <div><strong>{displayProjects.length}</strong><span>个团项目</span></div>
         <div><strong>{systemCount}</strong><span>种规则系统</span></div>
         <div><strong>{pendingReviewCount}</strong><span>条口胡待复盘</span></div>
         <div><strong>2</strong><span>个近期安排</span></div>
@@ -180,8 +200,8 @@ export function CampaignProjectDashboard({
               {item}
               <span>
                 {item === "全部"
-                  ? projects.length
-                  : projects.filter((project) => project.system === item).length}
+                  ? displayProjects.length
+                  : displayProjects.filter((project) => project.system === item).length}
               </span>
             </button>
           ))}
