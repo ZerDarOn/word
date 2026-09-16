@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
+import { saveAssetBinding } from "./lorecue_asset_usage_store";
+import type { LoreCueAssetRecord } from "./lorecue_asset_store";
+import { useProjectAssetUsage } from "./use_project_asset_usage";
+import { useProjectAssets } from "./use_project_assets";
 
 type EncounterTab = "遭遇运行总览" | "区域与环境" | "参与单位" | "规则与解法" | "遭遇后状态";
 type EncounterState = "待运行" | "进行中" | "已变化";
@@ -71,7 +75,10 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
   const [selectedTitle, setSelectedTitle] = useState(encounters[0].title);
   const [draft, setDraft] = useState(encounters[0]);
   const [clock, setClock] = useState(2);
+  const linkedMaps = useProjectAssets(project.id, ["地图"]);
+  const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = encounters.find((encounter) => encounter.title === selectedTitle) ?? encounters[0];
+  const currentBinding = usage?.bindings.find((binding) => binding.surface === "encounter" && binding.surfaceId === selected.title);
 
   function selectEncounter(encounter: EncounterRecord) {
     setSelectedTitle(encounter.title);
@@ -85,7 +92,19 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
   }
 
   function handleSaveEncounter() {
-    onFeedback(`已模拟保存“${draft.title}”的地图区域、规则和遭遇后状态。`);
+    onFeedback(`已模拟保存“${draft.title}”的地图区域、规则和遭遇后状态；底图引用为 ${currentBinding?.assetId ?? "未绑定"}。`);
+  }
+
+  function bindEncounterMap(asset: LoreCueAssetRecord) {
+    const next = saveAssetBinding(project.id, {
+      surface: "encounter",
+      surfaceId: selected.title,
+      assetId: asset.id,
+      assetTitle: asset.title,
+      visibility: asset.visibility,
+    });
+    setUsage(next);
+    onFeedback(`已把“${asset.title}”设为遭遇“${selected.title}”的底图来源；遭遇区域规则不会改写原图。`);
   }
 
   return (
@@ -95,9 +114,14 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
         <button onClick={() => onFeedback("已模拟从现有地图建立新遭遇。")}>＋ 从地图建遭遇</button>
       </div>
 
+      <section className="workbench-asset-strip" aria-label="遭遇可用地图素材">
+        <div><strong>遭遇底图来源</strong><span>{linkedMaps.length} 条项目地图 · 当前：{currentBinding?.assetTitle ?? "尚未绑定"}</span></div>
+        <div>{linkedMaps.length > 0 ? linkedMaps.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindEncounterMap(asset)}>{asset.title}<small>{asset.visibility} · {asset.id}</small></button>) : <p>当前项目没有明确引用的地图，遭遇暂时使用结构化示意图。</p>}</div>
+      </section>
+
       <section className="encounter-metrics" aria-label="地图与遭遇概况">
         <article><strong>7</strong><span>遭遇</span><small>追逐 2 · 探索 3 · 冲突 2</small></article>
-        <article><strong>6</strong><span>引用地图</span><small>地图文件保持独立</small></article>
+        <article><strong>{linkedMaps.length}</strong><span>项目地图</span><small>只统计明确引用</small></article>
         <article><strong>19</strong><span>地图区域</span><small>12 个包含环境效果</small></article>
         <article className="risk"><strong>2</strong><span>运行提醒</span><small>出口锁死 1 · 规则未适配 1</small></article>
       </section>
@@ -108,7 +132,7 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
           <nav aria-label="地图遭遇列表">
             {encounters.map((encounter, index) => <button key={encounter.title} className={selectedTitle === encounter.title ? "active" : ""} onClick={() => selectEncounter(encounter)}><b>0{index + 1}</b><span><strong>{encounter.title}</strong><small>{encounter.map}</small></span><em data-state={encounter.state}>{encounter.state}</em></button>)}
           </nav>
-          <section className="encounter-map-source"><span>引用地图</span><strong>{selected.map}</strong><p>编辑遭遇不会修改地图素材本身。</p><button onClick={() => onFeedback("已打开对应的分级地图。")}>打开地图</button></section>
+          <section className="encounter-map-source"><span>引用地图</span><strong>{currentBinding?.assetTitle ?? selected.map}</strong><p>{currentBinding ? `稳定素材 ID：${currentBinding.assetId}` : "尚未绑定资料仓底图；编辑遭遇不会修改地图素材本身。"}</p><button onClick={() => onFeedback(currentBinding ? `已定位资料仓地图“${currentBinding.assetTitle}”。` : "请从上方选择一张项目地图。")}>打开地图</button></section>
         </aside>
 
         <article className="encounter-editor">

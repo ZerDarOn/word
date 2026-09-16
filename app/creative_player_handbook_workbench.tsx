@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
+import { saveAssetBinding } from "./lorecue_asset_usage_store";
+import type { LoreCueAssetRecord } from "./lorecue_asset_store";
+import { useProjectAssetUsage } from "./use_project_asset_usage";
+import { useProjectAssets } from "./use_project_assets";
 
 type HandbookTab = "玩家手册总览" | "内容编辑" | "公开条件" | "玩家视角预览" | "剧透检查";
 type ReleaseState = "开场公开" | "条件公开" | "已发放" | "主持人隐藏";
@@ -70,7 +74,11 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
   const [selectedTitle, setSelectedTitle] = useState(handouts[0].title);
   const [draft, setDraft] = useState(handouts[0]);
   const [previewAudience, setPreviewAudience] = useState("全部玩家");
+  const linkedAssets = useProjectAssets(project.id, ["地图", "文档", "立绘"]);
+  const playerSafeAssets = linkedAssets.filter((asset) => asset.visibility !== "主持人私有");
+  const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = handouts.find((handout) => handout.title === selectedTitle) ?? handouts[0];
+  const currentBinding = usage?.bindings.find((binding) => binding.surface === "player-handout" && binding.surfaceId === selected.title);
 
   function selectHandout(handout: HandoutRecord) {
     setSelectedTitle(handout.title);
@@ -83,7 +91,19 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
   }
 
   function handleSaveHandout() {
-    onFeedback(`已模拟保存“${draft.title}”的公开内容、条件与版本。`);
+    onFeedback(`已模拟保存“${draft.title}”的公开内容、条件与版本；来源素材为 ${currentBinding?.assetId ?? "未绑定"}。`);
+  }
+
+  function bindHandoutSource(asset: LoreCueAssetRecord) {
+    const next = saveAssetBinding(project.id, {
+      surface: "player-handout",
+      surfaceId: selected.title,
+      assetId: asset.id,
+      assetTitle: asset.title,
+      visibility: asset.visibility,
+    });
+    setUsage(next);
+    onFeedback(`已把“${asset.title}”绑定为“${selected.title}”的公开来源；主持人私有素材不会出现在候选中。`);
   }
 
   return (
@@ -93,8 +113,13 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
         <button onClick={() => onFeedback("已模拟建立一份空白玩家附件。")}>＋ 新建玩家资料</button>
       </div>
 
+      <section className="workbench-asset-strip" aria-label="玩家手册可用素材">
+        <div><strong>公开来源素材</strong><span>{playerSafeAssets.length} 条可用于玩家版本 · 当前：{currentBinding?.assetTitle ?? "未绑定"}</span></div>
+        <div>{playerSafeAssets.length > 0 ? playerSafeAssets.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindHandoutSource(asset)}>{asset.title}<small>{asset.visibility} · {asset.kind}</small></button>) : <p>当前项目没有玩家可见或按场次解锁的地图、文档或立绘。</p>}</div>
+      </section>
+
       <section className="handbook-metrics" aria-label="玩家手册概况">
-        <article><strong>8</strong><span>玩家资料</span><small>简介、地图、信件与规则摘要</small></article>
+        <article><strong>{playerSafeAssets.length}</strong><span>可用来源素材</span><small>已排除主持人私有资料</small></article>
         <article><strong>3</strong><span>开场公开</span><small>无需行动即可查看</small></article>
         <article><strong>4</strong><span>条件公开</span><small>绑定场景、线索或玩家</small></article>
         <article className="risk"><strong>2</strong><span>剧透提醒</span><small>隐藏名称 1 · 地图锚点 1</small></article>

@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
+import { saveAssetBinding } from "./lorecue_asset_usage_store";
+import type { LoreCueAssetRecord } from "./lorecue_asset_store";
+import { useProjectAssetUsage } from "./use_project_asset_usage";
+import { useProjectAssets } from "./use_project_assets";
 
 type MapLevel = "世界" | "区域" | "城市" | "街区" | "建筑" | "楼层" | "房间";
 type MapVisibility = "玩家可见" | "主持人可见" | "仅主持人可见";
@@ -140,11 +144,26 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
   const flatMaps = useMemo(() => flattenMaps(mapTree), []);
   const [selectedId, setSelectedId] = useState("saffi");
   const [visibility, setVisibility] = useState<MapVisibility>("玩家可见");
+  const linkedMaps = useProjectAssets(project.id, ["地图"]);
+  const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = flatMaps.find((node) => node.id === selectedId) ?? flatMaps[0];
+  const currentBinding = usage?.bindings.find((binding) => binding.surface === "map-node" && binding.surfaceId === selected.id);
 
   function selectMap(node: FlatMapNode) {
     setSelectedId(node.id);
     setVisibility(node.visibility);
+  }
+
+  function bindMapAsset(asset: LoreCueAssetRecord) {
+    const next = saveAssetBinding(project.id, {
+      surface: "map-node",
+      surfaceId: selected.id,
+      assetId: asset.id,
+      assetTitle: asset.title,
+      visibility: asset.visibility,
+    });
+    setUsage(next);
+    onFeedback(`已把资料仓地图“${asset.title}”绑定到“${selected.name}”；底图文件仍保持独立。`);
   }
 
   return (
@@ -163,6 +182,11 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
           <span key={level}><b>{index + 1}</b>{level}{level === "房间" && <small> / 遭遇图</small>}</span>
         ))}
       </div>
+
+      <section className="workbench-asset-strip" aria-label="当前项目已引用地图">
+        <div><strong>资料仓地图</strong><span>{linkedMaps.length} 条明确引用 · 当前节点：{currentBinding?.assetTitle ?? "尚未绑定底图"}</span></div>
+        <div>{linkedMaps.length > 0 ? linkedMaps.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindMapAsset(asset)}>{asset.title}<small>{asset.visibility} · {asset.hasBinary ? "本地源文件" : "演示元数据"}</small></button>) : <p>当前项目尚未引用地图；请先到资料库建立引用。</p>}</div>
+      </section>
 
       <div className="map-hierarchy-layout">
         <aside className="map-tree-panel">
@@ -186,7 +210,7 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
         <article className="map-preview-panel">
           <header>
             <div><span>{selected.level}</span><h3>{selected.name}</h3></div>
-            <button onClick={() => onFeedback(`已模拟替换“${selected.name}”的地图底图。`)}>替换底图</button>
+            <button onClick={() => onFeedback(linkedMaps.length > 0 ? "请从上方资料仓地图中选择底图；选择后会保存稳定素材 ID。" : "当前项目没有可用地图，请先到资料库建立引用。")}>替换底图</button>
           </header>
           <div className="map-breadcrumb">{selected.path.map((name, index) => <span key={name}>{index > 0 && " / "}{name}</span>)}</div>
           <div className="illustrated-map" role="img" aria-label={`${selected.name}地图预览`}>
@@ -226,6 +250,10 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
           <section>
             <span className="eyebrow">说明</span>
             <p>{selected.description}</p>
+          </section>
+          <section>
+            <span className="eyebrow">底图来源</span>
+            <p>{currentBinding ? `${currentBinding.assetTitle} · ${currentBinding.assetId} · ${currentBinding.visibility}` : "尚未绑定资料仓地图；当前显示结构化示意图。"}</p>
           </section>
           <section>
             <span className="eyebrow">关联场景 / 遭遇</span>

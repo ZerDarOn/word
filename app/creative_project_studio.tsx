@@ -259,6 +259,11 @@ export function CreativeProjectStudio({
     setFeedback("已撤销备份导入，恢复导入前的项目状态。");
   }
 
+  function handleViewChange(view: CreativeStudioView) {
+    setActiveView(view);
+    setFeedback("");
+  }
+
   function renderStudioContent() {
     if (activeView === "大纲") {
       return (
@@ -347,12 +352,12 @@ export function CreativeProjectStudio({
         <span className="eyebrow">{project.kind}</span>
         <h1>{project.title}</h1>
         {activeView === "正文" ? (
-          <button className="document-project-switch" onClick={() => setActiveView("项目总览")}>⌂ 项目目录与设定</button>
+          <button className="document-project-switch" onClick={() => handleViewChange("项目总览")}>⌂ 项目目录与设定</button>
         ) : (
           <CreativeProjectNavigation
             activeView={activeView}
             projectKind={project.kind}
-            onViewChange={setActiveView}
+            onViewChange={handleViewChange}
           />
         )}
         <div className="document-tree" hidden={activeView !== "正文"}>

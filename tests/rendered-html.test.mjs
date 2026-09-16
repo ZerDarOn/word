@@ -236,6 +236,8 @@ test("connects the full creative workflow from project creation to version revie
   assert.match(projectStudio, /时间线/);
   assert.match(projectStudio, /版本/);
   assert.match(projectStudio, /handleCreateSnapshot/);
+  assert.match(projectStudio, /handleViewChange/);
+  assert.match(projectStudio, /setFeedback\(""\)/);
   assert.match(documentEditor, /插入素材/);
   assert.match(documentEditor, /useProjectAssets/);
   assert.match(documentEditor, /lorecue-asset:\/\//);
@@ -316,6 +318,9 @@ test("supports editable character secrets, D&D attributes, and hierarchical maps
   assert.match(maps, /房间/);
   assert.match(maps, /玩家可见/);
   assert.match(maps, /仅主持人可见/);
+  assert.match(maps, /useProjectAssets/);
+  assert.match(maps, /saveAssetBinding/);
+  assert.match(maps, /资料仓地图/);
   assert.match(narrativeViews, /<CreativeCharacterDossier/);
   assert.match(narrativeViews, /<CreativeMapHierarchy/);
 });
@@ -492,6 +497,9 @@ test("connects hierarchical maps to runnable tabletop encounters", async () => {
   assert.match(encounterWorkbench, /CoC 7e/);
   assert.match(encounterWorkbench, /遭遇后状态/);
   assert.match(encounterWorkbench, /handleSaveEncounter/);
+  assert.match(encounterWorkbench, /useProjectAssets/);
+  assert.match(encounterWorkbench, /saveAssetBinding/);
+  assert.match(encounterWorkbench, /项目地图/);
   assert.match(narrativeViews, /<CreativeMapEncounterWorkbench/);
 });
 
@@ -532,6 +540,9 @@ test("builds spoiler-safe player handbooks with conditional releases", async () 
   assert.match(handbookWorkbench, /撤回与修订/);
   assert.match(handbookWorkbench, /导出包/);
   assert.match(handbookWorkbench, /handleSaveHandout/);
+  assert.match(handbookWorkbench, /公开来源素材/);
+  assert.match(handbookWorkbench, /主持人私有/);
+  assert.match(handbookWorkbench, /saveAssetBinding/);
   assert.match(narrativeViews, /<CreativePlayerHandbookWorkbench/);
 });
 
@@ -575,7 +586,23 @@ test("manages player attachments as spoiler-safe session handouts", async () => 
   assert.match(attachmentWorkbench, /来源引用/);
   assert.match(attachmentWorkbench, /预览玩家所见/);
   assert.match(attachmentWorkbench, /handleSaveAttachment/);
+  assert.match(attachmentWorkbench, /主持人原件来源/);
+  assert.match(attachmentWorkbench, /addAssetDelivery/);
+  assert.match(attachmentWorkbench, /素材 ID/);
   assert.match(narrativeViews, /<CreativePlayerAttachmentWorkbench/);
+});
+
+test("persists project-scoped asset bindings and delivery history", async () => {
+  const [usageStore, usageHook] = await Promise.all([
+    readFile(new URL("../app/lorecue_asset_usage_store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/use_project_asset_usage.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(usageStore, /LORECUE_ASSET_USAGE_FORMAT/);
+  assert.match(usageStore, /saveAssetBinding/);
+  assert.match(usageStore, /addAssetDelivery/);
+  assert.match(usageStore, /revokeAssetDelivery/);
+  assert.match(usageHook, /ensureAssetUsageEnvelope/);
 });
 
 test("organizes character portraits by identity, state, and asset provenance", async () => {
