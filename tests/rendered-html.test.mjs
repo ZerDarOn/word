@@ -136,6 +136,11 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(aiAssistant, /合理推断/);
   assert.match(aiAssistant, /AI 新编/);
   assert.match(aiAssistant, /handleAskAi/);
+  assert.match(aiAssistant, /这次允许 AI 看什么/);
+  assert.match(aiAssistant, /知识边界检查/);
+  assert.match(aiAssistant, /手动现场输入/);
+  assert.match(aiAssistant, /handleConfirmDraft/);
+  assert.match(aiAssistant, /尚未成为正式设定/);
   assert.match(projectData, /无限/);
   assert.match(projectData, /系统无关/);
   assert.match(projectData, /自定义/);

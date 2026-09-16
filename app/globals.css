@@ -1548,6 +1548,61 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .ai-answer-actions .primary-action { color: white; border-color: var(--accent); background: var(--accent); }
 .ai-empty strong { display: block; margin-bottom: 7px; font-size: 12px; }
 .ai-empty p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.ai-context-builder, .ai-boundary-builder {
+  margin: 0 0 16px; padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+}
+.ai-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 11px; }
+.ai-section-heading h3 { margin: 1px 0 0; font-size: 14px; }
+.ai-section-heading > span { color: var(--muted); font-size: 8px; }
+.ai-source-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.ai-source-grid label {
+  display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 7px;
+  min-height: 54px; padding: 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); cursor: pointer;
+}
+.ai-source-grid label.selected { border-color: color-mix(in srgb, var(--forest) 65%, var(--line)); background: var(--forest-soft); }
+.ai-source-grid input { accent-color: var(--forest); }
+.ai-source-grid label > span { display: grid; min-width: 0; }
+.ai-source-grid strong { font-size: 9px; }
+.ai-source-grid small { overflow: hidden; color: var(--muted); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.context-kind { padding: 2px 4px; border-radius: 10px; color: var(--muted); font-size: 7px; font-style: normal; background: var(--paper-deep); }
+.context-kind.private { color: var(--accent); background: var(--accent-soft); }
+.context-kind.session { color: var(--amber); background: var(--amber-soft); }
+.ai-live-context { display: grid; gap: 6px; margin-top: 10px; }
+.ai-live-context > span, .ai-speaker-select > span { color: var(--muted); font-size: 9px; font-weight: 800; }
+.ai-live-context > span small { margin-left: 4px; font-weight: 400; }
+.ai-live-context textarea, .ai-speaker-select select {
+  width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--paper); resize: vertical;
+}
+.ai-speaker-select { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: center; gap: 8px; }
+.knowledge-boundary-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
+.knowledge-boundary-preview > div { padding: 9px; border-radius: 5px; background: var(--forest-soft); }
+.knowledge-boundary-preview > div.blocked { background: var(--accent-soft); }
+.knowledge-boundary-preview span { color: var(--forest); font-size: 7px; font-weight: 800; }
+.knowledge-boundary-preview .blocked span { color: var(--accent); }
+.knowledge-boundary-preview p { margin: 4px 0 0; font-size: 8px; line-height: 1.55; }
+.ai-request-manifest { display: grid; gap: 2px; margin-top: 9px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 6px; }
+.ai-request-manifest span, .ai-request-manifest small { color: var(--muted); font-size: 8px; }
+.ai-request-manifest strong { font-size: 9px; }
+.ai-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.ai-used-context { margin: 0 0 12px; padding: 10px; border: 1px dashed var(--line); border-radius: 5px; background: var(--paper-deep); }
+.ai-used-context > strong { display: block; margin-bottom: 6px; font-size: 8px; }
+.ai-used-context > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.ai-used-context > div span { padding: 3px 6px; border-radius: 10px; color: var(--forest); font-size: 7px; background: var(--forest-soft); }
+.ai-used-context > p { display: grid; grid-template-columns: auto 1fr; gap: 6px; margin: 7px 0 0; color: var(--muted); font-size: 8px; line-height: 1.5; }
+.ai-used-context em { color: var(--amber); font-style: normal; font-weight: 800; }
+.ai-boundary-result { margin-top: 9px; padding: 11px; border-inline-start: 3px solid var(--amber); background: var(--amber-soft); }
+.ai-boundary-result strong { display: block; margin-bottom: 4px; font-size: 9px; }
+.ai-boundary-result p { margin: 0; font-size: 9px; line-height: 1.55; }
+.ai-boundary-result span { color: var(--amber); font-weight: 800; }
+.ai-adoption-review { margin-top: 11px; padding: 12px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-soft); }
+.ai-adoption-review > div:first-child { display: grid; gap: 2px; }
+.ai-adoption-review > div:first-child strong { font-size: 10px; }
+.ai-adoption-review > p { margin: 7px 0 10px; font-size: 9px; line-height: 1.55; }
+.ai-adoption-review > div:last-child { display: flex; justify-content: flex-end; gap: 6px; }
+.ai-adoption-review button { min-height: 30px; padding: 4px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); cursor: pointer; }
+.ai-adoption-review button.primary-action { color: white; border-color: var(--accent); background: var(--accent); }
+.ai-pending-note { margin: 10px 0 0; color: var(--forest); font-size: 9px; font-weight: 800; text-align: right; }
+.ai-feedback { min-height: 16px; margin: 8px 0 0; color: var(--muted); font-size: 8px; text-align: right; }
 
 .campaign-project-card.system-infinite { border-top-color: var(--amber); }
 .campaign-project-card.system-other { border-top-color: var(--muted); }
@@ -3342,6 +3397,7 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .brand-block div span { display: none; }
   .brand-block strong { font-size: 15px; }
   .primary-navigation button { padding-inline: 6px; font-size: 9px; }
+  .ai-source-grid, .knowledge-boundary-preview { grid-template-columns: 1fr; }
 }
 
 @media (prefers-color-scheme: dark) {
