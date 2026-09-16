@@ -2774,13 +2774,13 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .handbook-export-card span { color: var(--forest); font-size: 6px; font-weight: 800; }
 .handbook-export-card strong { display: block; margin: 5px 0; font-size: 9px; }
 .handbook-export-card p { margin: 0 0 8px; color: var(--muted); font-size: 7px; }
-.handbook-export-card button, .handbook-overview button, .release-condition-panel button, .spoiler-check-panel button { min-height: 29px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--blue); font-size: 7px; font-weight: 800; background: var(--panel); cursor: pointer; }
+.handbook-export-card button, .handbook-overview button, .release-condition-panel button, .spoiler-check-panel button, .handbook-delivery-log button { min-height: 29px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--blue); font-size: 7px; font-weight: 800; background: var(--panel); cursor: pointer; }
 .handbook-editor > header { position: relative; padding: 15px 125px 14px 16px; border-bottom: 1px solid var(--line); background: var(--paper-deep); }
 .handbook-editor > header span { color: var(--accent); font-size: 7px; font-weight: 800; }
 .handbook-editor > header h3 { margin: 5px 0 4px; font-family: Georgia, "Songti SC", serif; font-size: 17px; }
 .handbook-editor > header p { margin: 0; color: var(--muted); font-size: 7px; }
 .handbook-editor > header > button { position: absolute; top: 17px; right: 16px; min-height: 32px; padding: 6px 10px; border: 1px solid var(--accent); border-radius: 5px; color: white; font-size: 8px; font-weight: 800; background: var(--accent); cursor: pointer; }
-.handbook-overview, .release-condition-panel, .player-preview-panel, .spoiler-check-panel { padding: 14px; }
+.handbook-overview, .release-condition-panel, .player-preview-panel, .spoiler-check-panel, .handbook-delivery-log { padding: 14px; }
 .handout-summary { padding: 15px; border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: 7px; background: var(--paper); }
 .handout-summary > span { color: var(--blue); font-size: 7px; font-weight: 800; }
 .handout-summary h4 { margin: 7px 0; font-family: Georgia, "Songti SC", serif; font-size: 15px; }
@@ -2829,6 +2829,23 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .spoiler-check-panel > aside span { color: var(--accent-dark); font-size: 7px; font-weight: 800; }
 .spoiler-check-panel > aside strong { display: block; margin: 5px 0; font-size: 9px; }
 .spoiler-check-panel > aside p { margin: 0; color: var(--muted); font-size: 7px; }
+.handbook-delivery-log > header { padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-deep); }
+.handbook-delivery-log > header strong { font-size: 9px; }
+.handbook-delivery-log > header p { margin: 4px 0 0; color: var(--muted); font-size: 7px; line-height: 1.5; }
+.handbook-delivery-log > section { display: grid; gap: 7px; margin-top: 9px; }
+.handbook-delivery-log article { display: grid; grid-template-columns: 135px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-inline-start: 3px solid var(--forest); border-radius: 5px; background: var(--paper); }
+.handbook-delivery-log article.revoked { border-inline-start-color: var(--accent); }
+.handbook-delivery-log time { color: var(--muted); font-size: 7px; font-weight: 800; }
+.handbook-delivery-log article strong { font-size: 9px; }
+.handbook-delivery-log article p { margin: 4px 0 0; color: var(--muted); font-size: 7px; }
+.handbook-delivery-log article em { padding: 4px 7px; border-radius: 999px; color: var(--forest); font-size: 6px; font-style: normal; font-weight: 800; background: var(--forest-soft); }
+.handbook-delivery-log article.revoked em { color: var(--accent-dark); background: var(--accent-soft); }
+.handbook-delivery-empty { margin-top: 9px; padding: 18px; border: 1px dashed var(--line); border-radius: 6px; text-align: center; background: var(--paper); }
+.handbook-delivery-empty strong { font-size: 9px; }
+.handbook-delivery-empty p { margin: 5px 0 0; color: var(--muted); font-size: 7px; }
+.handbook-delivery-log > aside { margin-top: 9px; padding: 12px; border-inline-start: 3px solid var(--amber); border-radius: 5px; background: var(--amber-soft); }
+.handbook-delivery-log > aside strong { color: var(--amber); font-size: 8px; }
+.handbook-delivery-log > aside p { margin: 5px 0 0; color: var(--muted); font-size: 7px; line-height: 1.55; }
 
 .audio-policy-banner { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; padding: 10px 13px; border: 1px solid var(--blue); border-inline-start-width: 4px; border-radius: 7px; background: var(--blue-soft); }
 .audio-policy-banner strong { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; color: var(--blue); font-size: 7px; background: var(--panel); }
@@ -3378,8 +3395,8 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .original-attachment > section { grid-template-columns: 1fr; }
   .original-attachment article.danger { grid-column: 1; }
   .attachment-mask-check { grid-column: 1; align-items: flex-start; flex-direction: column; }
-  .attachment-release article, .attachment-delivery-log article { grid-template-columns: 82px minmax(0, 1fr); }
-  .attachment-release article button, .attachment-delivery-log article em, .attachment-delivery-log article button { grid-column: 2; justify-self: start; }
+  .attachment-release article, .attachment-delivery-log article, .handbook-delivery-log article { grid-template-columns: 82px minmax(0, 1fr); }
+  .attachment-release article button, .attachment-delivery-log article em, .attachment-delivery-log article button, .handbook-delivery-log article em, .handbook-delivery-log article button { grid-column: 2; justify-self: start; }
   .portrait-policy-banner { align-items: flex-start; flex-direction: column; }
   .portrait-metrics { grid-template-columns: repeat(2, 1fr); }
   .portrait-metrics article:nth-child(2) { border-inline-end: 0; }

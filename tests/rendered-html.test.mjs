@@ -546,6 +546,10 @@ test("builds spoiler-safe player handbooks with conditional releases", async () 
   assert.match(handbookWorkbench, /公开来源素材/);
   assert.match(handbookWorkbench, /主持人私有/);
   assert.match(handbookWorkbench, /saveAssetBinding/);
+  assert.match(handbookWorkbench, /addAssetDelivery/);
+  assert.match(handbookWorkbench, /revokeAssetDelivery/);
+  assert.match(handbookWorkbench, /模组发布 · 未指定场次/);
+  assert.match(handbookWorkbench, /发放记录/);
   assert.match(narrativeViews, /<CreativePlayerHandbookWorkbench/);
 });
 

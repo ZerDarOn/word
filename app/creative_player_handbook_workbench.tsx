@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
-import { removeAssetBinding, saveAssetBinding } from "./lorecue_asset_usage_store";
+import {
+  addAssetDelivery,
+  removeAssetBinding,
+  revokeAssetDelivery,
+  saveAssetBinding,
+  type LoreCueAssetDelivery,
+} from "./lorecue_asset_usage_store";
 import type { LoreCueAssetRecord } from "./lorecue_asset_store";
 import { useProjectAssetUsage } from "./use_project_asset_usage";
 import { useProjectAssets } from "./use_project_assets";
 
-type HandbookTab = "玩家手册总览" | "内容编辑" | "公开条件" | "玩家视角预览" | "剧透检查";
+type HandbookTab = "玩家手册总览" | "内容编辑" | "公开条件" | "玩家视角预览" | "剧透检查" | "发放记录";
 type ReleaseState = "开场公开" | "条件公开" | "已发放" | "主持人隐藏";
 
 interface HandoutRecord {
@@ -81,6 +87,7 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "player-handout" && binding.surfaceId === selected.title);
   const boundSource = currentBinding ? playerSafeAssets.find((asset) => asset.id === currentBinding.assetId) : undefined;
   const bindingIsStale = Boolean(currentBinding && !boundSource);
+  const deliveries = usage?.deliveries.filter((delivery) => delivery.surface === "player-handout") ?? [];
 
   function selectHandout(handout: HandoutRecord) {
     setSelectedTitle(handout.title);
@@ -114,6 +121,36 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
     onFeedback(`已解除“${selected.title}”的来源绑定；玩家资料正文和历史发放仍保留。`);
   }
 
+  function handleDeliverHandout(handout: HandoutRecord) {
+    if (handout.state === "主持人隐藏") {
+      onFeedback("主持人隐藏资料不能直接发放；请先建立公开切片。");
+      return;
+    }
+    if (!currentBinding || bindingIsStale) {
+      onFeedback(bindingIsStale ? "公开来源引用已经失效，请重新绑定后再发放。" : "请先绑定一份非主持人私有的来源素材，再确认发放。");
+      return;
+    }
+    const next = addAssetDelivery(project.id, {
+      surface: "player-handout",
+      surfaceId: handout.title,
+      assetId: currentBinding.assetId,
+      assetTitle: currentBinding.assetTitle,
+      playerTitle: handout.title,
+      recipient: handout.audience,
+      sessionLabel: "模组发布 · 未指定场次",
+      version: handout.revision.split(" · ")[0] || "未标版本",
+    });
+    setUsage(next);
+    setActiveTab("发放记录");
+    onFeedback(`已记录向“${handout.audience}”发放“${handout.title}”；尚未指定实际团与场次。`);
+  }
+
+  function handleRevokeHandout(delivery: LoreCueAssetDelivery) {
+    const next = revokeAssetDelivery(project.id, delivery.id);
+    setUsage(next);
+    onFeedback(`已撤回“${delivery.playerTitle}”的后续访问；玩家曾看到的版本仍留在发放历史。`);
+  }
+
   return (
     <section className="player-handbook-workbench studio-board">
       <div className="studio-page-heading">
@@ -129,7 +166,7 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
       <section className="handbook-metrics" aria-label="玩家手册概况">
         <article><strong>{playerSafeAssets.length}</strong><span>可用来源素材</span><small>已排除主持人私有资料</small></article>
         <article><strong>3</strong><span>开场公开</span><small>无需行动即可查看</small></article>
-        <article><strong>4</strong><span>条件公开</span><small>绑定场景、线索或玩家</small></article>
+        <article><strong>{deliveries.filter((delivery) => delivery.status === "active").length}</strong><span>本地已发放</span><small>未指定场次也明确标注</small></article>
         <article className="risk"><strong>2</strong><span>剧透提醒</span><small>隐藏名称 1 · 地图锚点 1</small></article>
       </section>
 
@@ -142,12 +179,13 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
 
         <article className="handbook-editor">
           <header><div><span>{selected.kind} · {selected.state}</span><h3>{selected.title}</h3><p>{selected.revision}</p></div><button onClick={handleSaveHandout}>保存资料</button></header>
-          <nav className="entity-tabs" aria-label="玩家手册分区">{(["玩家手册总览", "内容编辑", "公开条件", "玩家视角预览", "剧透检查"] as HandbookTab[]).map((tab) => <button key={tab} className={activeTab === tab ? "active" : ""} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>
-          {activeTab === "玩家手册总览" && <HandbookOverview handout={selected} onFeedback={onFeedback} />}
+          <nav className="entity-tabs" aria-label="玩家手册分区">{(["玩家手册总览", "内容编辑", "公开条件", "玩家视角预览", "剧透检查", "发放记录"] as HandbookTab[]).map((tab) => <button key={tab} className={activeTab === tab ? "active" : ""} onClick={() => setActiveTab(tab)}>{tab}</button>)}</nav>
+          {activeTab === "玩家手册总览" && <HandbookOverview handout={selected} onFeedback={onFeedback} onDeliver={handleDeliverHandout} />}
           {activeTab === "内容编辑" && <HandoutEditor handout={draft} onChange={updateDraft} />}
           {activeTab === "公开条件" && <ReleaseConditions handout={draft} onChange={updateDraft} onFeedback={onFeedback} />}
           {activeTab === "玩家视角预览" && <PlayerPreview handout={selected} audience={previewAudience} onAudienceChange={setPreviewAudience} />}
           {activeTab === "剧透检查" && <SpoilerCheck onFeedback={onFeedback} />}
+          {activeTab === "发放记录" && <HandbookDeliveryLog deliveries={deliveries} onRevoke={handleRevokeHandout} onFeedback={onFeedback} />}
         </article>
       </div>
       <p className="workbench-context-note">当前项目：{project.title} · 玩家手册只引用公开切片，不会检索主持人真相、NPC 隐藏知识或未确认事实。</p>
@@ -155,8 +193,12 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
   );
 }
 
-function HandbookOverview({ handout, onFeedback }: { handout: HandoutRecord; onFeedback: (message: string) => void }) {
-  return <div className="handbook-overview"><section className="handout-summary"><span>{handout.state}</span><h4>{handout.title}</h4><p>{handout.content}</p><dl><div><dt>受众</dt><dd>{handout.audience}</dd></div><div><dt>来源</dt><dd>{handout.source}</dd></div><div><dt>公开条件</dt><dd>{handout.condition}</dd></div></dl></section><section className="handout-flow"><article><b>01</b><strong>引用公开切片</strong><p>不会复制主持人隐藏原文。</p></article><i>›</i><article><b>02</b><strong>剧透检查</strong><p>检查名称、地图层和元数据。</p></article><i>›</i><article><b>03</b><strong>发放并留档</strong><p>记录玩家收到的具体版本。</p></article></section><div className="handout-actions"><button onClick={() => onFeedback("已切换到玩家视角预览。")}>玩家视角预览</button><button onClick={() => onFeedback("已模拟将当前版本发放给目标玩家。")}>发放当前版本</button></div></div>;
+function HandbookOverview({ handout, onFeedback, onDeliver }: { handout: HandoutRecord; onFeedback: (message: string) => void; onDeliver: (handout: HandoutRecord) => void }) {
+  return <div className="handbook-overview"><section className="handout-summary"><span>{handout.state}</span><h4>{handout.title}</h4><p>{handout.content}</p><dl><div><dt>受众</dt><dd>{handout.audience}</dd></div><div><dt>来源</dt><dd>{handout.source}</dd></div><div><dt>公开条件</dt><dd>{handout.condition}</dd></div></dl></section><section className="handout-flow"><article><b>01</b><strong>引用公开切片</strong><p>不会复制主持人隐藏原文。</p></article><i>›</i><article><b>02</b><strong>剧透检查</strong><p>检查名称、地图层和元数据。</p></article><i>›</i><article><b>03</b><strong>发放并留档</strong><p>记录玩家收到的具体版本。</p></article></section><div className="handout-actions"><button onClick={() => onFeedback("已切换到玩家视角预览。")}>玩家视角预览</button><button onClick={() => onDeliver(handout)}>发放当前版本</button></div></div>;
+}
+
+function HandbookDeliveryLog({ deliveries, onRevoke, onFeedback }: { deliveries: LoreCueAssetDelivery[]; onRevoke: (delivery: LoreCueAssetDelivery) => void; onFeedback: (message: string) => void }) {
+  return <div className="handbook-delivery-log"><header><strong>发放记录</strong><p>模组阶段未指定实际团或场次时会明确标注，不把创作记录伪装成真实跑团历史。</p></header>{deliveries.length > 0 ? <section>{deliveries.map((delivery) => <article className={delivery.status === "revoked" ? "revoked" : ""} key={delivery.id}><time>{delivery.sessionLabel}</time><div><strong>{delivery.playerTitle}</strong><p>{delivery.recipient} · {delivery.version} · 素材 {delivery.assetId ?? "无绑定"}</p></div><em>{delivery.status === "revoked" ? "已撤回" : "仍可查看"}</em><button onClick={() => delivery.status === "active" ? onRevoke(delivery) : onFeedback("该记录已经撤回；历史披露仍保留。")}>{delivery.status === "active" ? "撤回访问" : "查看记录"}</button></article>)}</section> : <div className="handbook-delivery-empty"><strong>尚无真实发放记录</strong><p>绑定公开来源并从总览确认发放后，具体版本会出现在这里。</p></div>}<aside><strong>创作记录不等于场次记录</strong><p>建立实际团后，应再选择团项目与场次；当前仅证明这份模组玩家资料曾被发布。</p></aside></div>;
 }
 
 function HandoutEditor({ handout, onChange }: { handout: HandoutRecord; onChange: <Key extends keyof HandoutRecord>(key: Key, value: HandoutRecord[Key]) => void }) {
