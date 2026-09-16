@@ -651,12 +651,20 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .handoff-card > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .next-session-card .handoff-refresh { margin-top: 10px; border-color: var(--line-strong); color: var(--blue); }
 .handoff-list { display: grid; gap: 7px; margin-top: 10px; }
-.handoff-list label { display: grid; grid-template-columns: 15px minmax(0, 1fr); gap: 7px; padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); cursor: pointer; }
+.handoff-list article { border: 1px solid var(--line); border-radius: 5px; background: var(--paper); }
+.handoff-list label { display: grid; grid-template-columns: 15px minmax(0, 1fr); gap: 7px; padding: 9px; cursor: pointer; }
 .handoff-list input { margin-top: 2px; accent-color: var(--forest); }
 .handoff-list label > span { display: grid; gap: 4px; }
 .handoff-list em { justify-self: start; padding: 2px 5px; border-radius: 999px; color: var(--forest); font-size: 9px; font-style: normal; font-weight: 800; background: var(--forest-soft); }
 .handoff-list strong { font-size: 11px; line-height: 1.5; }
 .handoff-list small { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.next-session-card .handoff-list article > button { width: auto; margin: 0 9px 9px 31px; padding: 3px 7px; border-color: var(--line); color: var(--muted); font-size: 9px; }
+.handoff-manual-form { display: grid; gap: 7px; margin-top: 10px; padding: 10px; border: 1px dashed var(--line-strong); border-radius: 5px; background: var(--surface-soft); }
+.handoff-manual-form > strong { color: var(--accent-dark); font-size: 11px; }
+.handoff-manual-form select, .handoff-manual-form textarea, .handoff-manual-form input { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: 7px 8px; color: var(--ink); font: inherit; font-size: 10px; background: var(--paper); }
+.handoff-manual-form textarea { min-height: 58px; resize: vertical; line-height: 1.5; }
+.next-session-card .handoff-manual-form button { margin-top: 0; }
+.handoff-manual-form small { color: var(--muted); font-size: 9px; line-height: 1.5; }
 .handoff-card > aside { margin-top: 10px; padding: 9px; border-inline-start: 3px solid var(--blue); border-radius: 4px; background: var(--blue-soft); }
 .handoff-card > aside strong { color: var(--blue); font-size: 10px; }
 .handoff-card > aside p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }

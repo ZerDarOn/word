@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
   historicalSessionSnapshots,
   initialBrief,
@@ -93,7 +93,8 @@ function buildHandoffCandidates(records: SessionRecord[], existing: LoreCueHando
     }];
   });
   const existingById = new Map(existing.map((item) => [item.id, item]));
-  return [...promotedRecords, ...baselineHandoffItems].map((item) => ({
+  const manualItems = existing.filter((item) => item.id.startsWith("handoff-manual-"));
+  return [...promotedRecords, ...baselineHandoffItems, ...manualItems].map((item) => ({
     ...item,
     selected: existingById.get(item.id)?.selected ?? false,
   }));
@@ -116,6 +117,9 @@ export function SessionArchivePanel({
   const [draftTitle, setDraftTitle] = useState("未命名场次");
   const [draftPlan, setDraftPlan] = useState("承接灰潮号靠港线索，等待团后复盘完成后补充。");
   const [handoffItems, setHandoffItems] = useState<LoreCueHandoffItem[]>(baselineHandoffItems);
+  const [manualHandoffKind, setManualHandoffKind] = useState<LoreCueHandoffItem["kind"]>("未决问题");
+  const [manualHandoffText, setManualHandoffText] = useState("");
+  const [manualHandoffSource, setManualHandoffSource] = useState("");
   const [feedback, setFeedback] = useState("正在读取本团的场次档案……");
 
   useEffect(() => {
@@ -212,6 +216,38 @@ export function SessionArchivePanel({
       : item);
     setHandoffItems(nextItems);
     saveCampaignHandoff(campaignId, nextItems);
+  }
+
+  function handleAddManualHandoff(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = manualHandoffText.trim();
+    const source = manualHandoffSource.trim();
+    if (!text || !source) {
+      setFeedback("手动承接项的内容与来源都要填写；无来源内容不会进入候选。");
+      return;
+    }
+    const item: LoreCueHandoffItem = {
+      id: `handoff-manual-${Date.now()}`,
+      kind: manualHandoffKind,
+      text,
+      sourceSessionId: selectedSession.id,
+      sourceSessionLabel: `${selectedSession.number} · ${selectedSession.title}`,
+      sourceLabel: `主持人补充 · ${source}`,
+      selected: false,
+    };
+    const nextItems = [...handoffItems, item];
+    setHandoffItems(nextItems);
+    saveCampaignHandoff(campaignId, nextItems);
+    setManualHandoffText("");
+    setManualHandoffSource("");
+    setFeedback("已新增 1 条带来源的主持人承接候选；默认未勾选。");
+  }
+
+  function handleRemoveManualHandoff(itemId: string) {
+    const nextItems = handoffItems.filter((item) => item.id !== itemId);
+    setHandoffItems(nextItems);
+    saveCampaignHandoff(campaignId, nextItems);
+    setFeedback("已移除这条主持人补充候选；不会影响原始复盘记录。");
   }
 
   function handleApplyHandoffToDraft() {
@@ -592,10 +628,23 @@ export function SessionArchivePanel({
                 <div className="handoff-card-heading"><div><span className="eyebrow">留给下一次</span><h2>第 4 次团承接清单</h2></div><b>{handoffItems.filter((item) => item.selected).length}/{handoffItems.length}</b></div>
                 <p>候选不会自动进入下一场；只有主持人勾选的内容会连同来源写入草稿。</p>
                 <button className="handoff-refresh" onClick={handleRefreshHandoffCandidates}>从复盘结果刷新候选</button>
-                <div className="handoff-list">{handoffItems.map((item) => <label key={item.id}>
-                  <input type="checkbox" checked={item.selected} onChange={() => handleToggleHandoff(item.id)} />
-                  <span><em>{item.kind}</em><strong>{item.text}</strong><small>{item.sourceSessionLabel} · {item.sourceLabel}</small></span>
-                </label>)}</div>
+                <div className="handoff-list">{handoffItems.map((item) => <article key={item.id}>
+                  <label>
+                    <input type="checkbox" checked={item.selected} onChange={() => handleToggleHandoff(item.id)} />
+                    <span><em>{item.kind}</em><strong>{item.text}</strong><small>{item.sourceSessionLabel} · {item.sourceLabel}</small></span>
+                  </label>
+                  {item.id.startsWith("handoff-manual-") && <button type="button" onClick={() => handleRemoveManualHandoff(item.id)}>移除</button>}
+                </article>)}</div>
+                <form className="handoff-manual-form" onSubmit={handleAddManualHandoff}>
+                  <strong>主持人补充候选</strong>
+                  <select aria-label="承接类型" value={manualHandoffKind} onChange={(event) => setManualHandoffKind(event.target.value as LoreCueHandoffItem["kind"])}>
+                    <option>未决问题</option><option>保留状态</option><option>长期事实</option>
+                  </select>
+                  <textarea aria-label="承接内容" placeholder="例如：守卫队已经提高东门警戒" value={manualHandoffText} onChange={(event) => setManualHandoffText(event.target.value)} />
+                  <input aria-label="承接来源" placeholder="来源，例如：团后语音复盘 23:40" value={manualHandoffSource} onChange={(event) => setManualHandoffSource(event.target.value)} />
+                  <button type="submit">加入候选（默认不选）</button>
+                  <small>来源必填；这里只记录主持人的判断，不会伪装成原剧本内容。</small>
+                </form>
                 <aside><strong>AI 不直接进入承接</strong><p>咨询建议必须先转为客观事实、NPC 主张或由主持人另建候选，不能因为“已复盘”就写入下一场。</p></aside>
                 <button className="handoff-apply" disabled={!handoffItems.some((item) => item.selected)} onClick={handleApplyHandoffToDraft}>写入第 4 次团草稿</button>
               </section>

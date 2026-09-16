@@ -151,6 +151,11 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(archivePanel, /第 4 次团承接清单/);
   assert.match(archivePanel, /AI 不直接进入承接/);
   assert.match(archivePanel, /写入第 4 次团草稿/);
+  assert.match(archivePanel, /handleAddManualHandoff/);
+  assert.match(archivePanel, /handoff-manual-/);
+  assert.match(archivePanel, /主持人补充候选/);
+  assert.match(archivePanel, /来源必填/);
+  assert.match(archivePanel, /handleRemoveManualHandoff/);
   assert.match(consultationHook, /readProjectConsultationsForSession/);
   assert.match(consultationHook, /LORECUE_PROJECT_STORE_EVENT/);
   assert.match(archiveData, /initialSessionRecords/);
