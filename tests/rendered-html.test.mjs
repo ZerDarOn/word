@@ -131,6 +131,8 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(store, /saveCampaignDraft/);
   assert.match(prototype, /CURRENT_CAMPAIGN_ID/);
   assert.match(prototype, /saveCampaignRecords/);
+  assert.match(prototype, /useSessionConsultations/);
+  assert.match(prototype, /pendingRecordCount \+ pendingConsultationCount/);
   assert.match(dashboard, /currentPendingReviews/);
   assert.match(archivePanel, /场次数据仓 v1/);
   assert.match(archivePanel, /useSessionAssetDeliveries/);
@@ -139,6 +141,10 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(archivePanel, /本场 AI 咨询留痕/);
   assert.match(archivePanel, /updateProjectConsultationStatus/);
   assert.match(archivePanel, /不会把 AI 建议或临场补全自动升级成正式设定/);
+  assert.match(archivePanel, /统一复盘队列/);
+  assert.match(archivePanel, /AI 咨询处理/);
+  assert.match(archivePanel, /pendingReviewCount/);
+  assert.match(archivePanel, /已复盘 · 未写入设定/);
   assert.match(consultationHook, /readProjectConsultationsForSession/);
   assert.match(consultationHook, /LORECUE_PROJECT_STORE_EVENT/);
   assert.match(archiveData, /initialSessionRecords/);

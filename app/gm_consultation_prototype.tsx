@@ -13,6 +13,7 @@ import { NarrativeAssetLibrary } from "./narrative_asset_library";
 import { SessionArchivePanel } from "./session_archive_panel";
 import { initialSessionRecords, type ReviewStatus, type SessionRecord } from "./session_archive_data";
 import { ensureCampaignArchive, saveCampaignRecords } from "./lorecue_campaign_store";
+import { useSessionConsultations } from "./use_session_consultations";
 
 const CURRENT_CAMPAIGN_ID = "saffi-old-friends";
 const CURRENT_CAMPAIGN_TITLE = "萨菲港旧案 · 老友组";
@@ -50,6 +51,7 @@ export function GmConsultationPrototype() {
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [feedback, setFeedback] = useState("选择一个棘手情况，看看咨询台如何拆解。");
   const [records, setRecords] = useState<SessionRecord[]>(initialSessionRecords);
+  const sessionConsultations = useSessionConsultations(CURRENT_CAMPAIGN_ID, CURRENT_SESSION_ID);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -110,7 +112,9 @@ export function GmConsultationPrototype() {
     setFeedback(`团后归档已更新为“${status}”。`);
   }
 
-  const pendingCount = records.filter((record) => record.status === "待确认").length;
+  const pendingRecordCount = records.filter((record) => record.status === "待确认").length;
+  const pendingConsultationCount = sessionConsultations.filter((consultation) => consultation.status === "pending").length;
+  const pendingCount = pendingRecordCount + pendingConsultationCount;
 
   function openAi(prompt = "", scope = "潮汐来信 · 当前创作项目", projectId = "tide-letter") {
     setAiPrompt(prompt);
@@ -411,8 +415,8 @@ export function GmConsultationPrototype() {
 
           <section className="side-card review-summary">
             <span className="eyebrow">团后待确认</span>
-            <h2>{pendingCount} 条临场内容</h2>
-            <p>已说出口或已经发生，不等于原剧本就是这样写的。</p>
+            <h2>{pendingCount} 条待复盘事项</h2>
+            <p>{pendingRecordCount} 条临场内容 · {pendingConsultationCount} 条 AI 咨询；两者都不会自动成为正式设定。</p>
             <button className="secondary-action" onClick={() => setActiveView("archive")}>
               打开场次档案
             </button>

@@ -620,8 +620,21 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 
 .review-layout { grid-template-columns: minmax(0, 1.65fr) minmax(250px, 0.65fr); }
 .review-explainer { margin: 0; padding: 13px 20px; color: var(--muted); font-size: 11px; background: var(--paper-deep); }
+.review-queue-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 10px; border-top: 1px solid var(--line); }
+.review-queue-heading > div { display: grid; gap: 3px; }
+.review-queue-heading strong { font-size: 11px; }
+.review-queue-heading small, .review-queue-heading > span { color: var(--muted); font-size: 8px; }
 .archive-review-card .record-list { padding: 0; }
 .archive-review-card .record-item { border-width: 1px 0 0; border-radius: 0; box-shadow: none; }
+.review-consultation-queue { display: grid; }
+.review-consultation-queue > article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 20px; border-top: 1px solid var(--line); }
+.review-consultation-queue > article > div { display: grid; gap: 5px; }
+.review-consultation-queue > article span { color: var(--blue); font-size: 8px; font-weight: 800; }
+.review-consultation-queue > article strong { font-size: 11px; }
+.review-consultation-queue > article small { color: var(--muted); font-size: 8px; }
+.review-consultation-queue button { min-height: 30px; padding: 5px 9px; border: 1px solid var(--amber); border-radius: 5px; color: var(--amber); font-size: 8px; font-weight: 800; background: var(--amber-soft); cursor: pointer; }
+.review-consultation-queue em { color: var(--forest); font-size: 8px; font-style: normal; font-weight: 800; }
+.review-consultation-queue > p { margin: 0; padding: 14px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
 .decision-summary { padding: 18px; }
 .decision-summary dl { display: grid; gap: 9px; margin: 12px 0 0; }
 .decision-summary dl div { display: flex; justify-content: space-between; padding-top: 9px; border-top: 1px solid var(--line); }
@@ -3542,7 +3555,8 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .consultation-header, .result-topline { align-items: flex-start; flex-direction: column; }
   .mode-control { width: 100%; }
   .mode-control button { flex: 1; }
-  .guardrail-grid, .session-sidebar, .review-drawer, .record-item { grid-template-columns: 1fr; }
+  .guardrail-grid, .session-sidebar, .review-drawer, .record-item, .review-consultation-queue > article { grid-template-columns: 1fr; }
+  .review-consultation-queue button, .review-consultation-queue em { justify-self: start; }
   .session-sidebar { display: grid; padding: 20px 16px; }
   .review-drawer { padding: 24px 16px; }
   .review-intro { max-width: none; }

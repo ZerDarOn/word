@@ -90,7 +90,9 @@ export function SessionArchivePanel({
         : sessionTimeline.filter((entry) => entry.kind === timelineFilter),
     [timelineFilter],
   );
-  const pendingCount = records.filter((record) => record.status === "待确认").length;
+  const pendingRecordCount = records.filter((record) => record.status === "待确认").length;
+  const pendingConsultationCount = sessionConsultations.filter((consultation) => consultation.status === "pending").length;
+  const pendingReviewCount = pendingRecordCount + pendingConsultationCount;
   const historicalSnapshot = historicalSessionSnapshots[selectedSessionId];
   const showCurrentSession = selectedSessionId === "session-3";
 
@@ -135,6 +137,11 @@ export function SessionArchivePanel({
       saveCampaignObjectives(campaignId, [...next]);
       return next;
     });
+  }
+
+  function handleReviewConsultation(projectId: string, consultationId: string) {
+    updateProjectConsultationStatus(projectId, consultationId, "reviewed");
+    setFeedback("该条 AI 咨询已标为已复盘；建议与来源快照仍未升级成正式设定。");
   }
 
   function handleSaveDraft() {
@@ -244,10 +251,7 @@ export function SessionArchivePanel({
               {consultation.liveContext && <p><b>现场输入</b>{consultation.liveContext}</p>}
               <small>{consultation.sourceLabels.length} 份依据 · {consultation.includesPlayerDisclosures ? `纳入 ${disclosureCount} 份玩家已知资料` : "未纳入玩家已知资料"} · {consultation.createdAt}</small>
               {includesRevokedDisclosure && <b className="revoked-disclosure">含已撤回但曾披露资料</b>}
-              {consultation.status === "pending" && <button onClick={() => {
-                updateProjectConsultationStatus(consultation.projectId, consultation.id, "reviewed");
-                setFeedback("该条 AI 咨询已标为已复盘；建议与来源快照仍未升级成正式设定。");
-              }}>标为已复盘</button>}
+              {consultation.status === "pending" && <button onClick={() => handleReviewConsultation(consultation.projectId, consultation.id)}>标为已复盘</button>}
             </article>;
           })}</div> : <div className="session-consultation-empty"><strong>本场尚无 AI 咨询留痕</strong><p>只有明确采用为草稿、并绑定到“{selectedSession.number} · {selectedSession.title}”的咨询才会进入档案。</p></div>}
           <p className="session-consultation-note">复盘只确认“这次咨询处理过了”，不会把 AI 建议或临场补全自动升级成正式设定。</p>
@@ -264,7 +268,7 @@ export function SessionArchivePanel({
               >
                 <span>0{index + 1}</span>
                 {phase}
-                {phase === "团后复盘" && pendingCount > 0 && <b>{pendingCount}</b>}
+                {phase === "团后复盘" && pendingReviewCount > 0 && <b>{pendingReviewCount}</b>}
               </button>
             ))}
           </nav>
@@ -428,12 +432,13 @@ export function SessionArchivePanel({
           <div className="archive-content-grid review-layout">
             <section className="archive-card archive-review-card">
               <div className="archive-card-heading">
-                <div><span className="eyebrow">临场内容</span><h2>逐条决定它以后算什么</h2></div>
-                <span className="count-pill">{pendingCount}</span>
+                <div><span className="eyebrow">统一复盘队列</span><h2>事实归档与 AI 咨询分开处理</h2></div>
+                <span className="count-pill">{pendingReviewCount}</span>
               </div>
               <p className="review-explainer">
-                实际说出或发生的内容不能删除历史，但可以决定它是否成为世界的长期事实。
+                实际说出或发生的内容需要决定是否成为长期事实；AI 咨询只确认是否已复盘，不会因此写入设定。
               </p>
+              <div className="review-queue-heading"><div><strong>临场事实判断</strong><small>口胡、主持人陈述与桌上实际发生</small></div><span>{pendingRecordCount} 待确认</span></div>
               <div className="record-list">
                 {records.map((record) => (
                   <article className="record-item" key={record.id}>
@@ -462,13 +467,24 @@ export function SessionArchivePanel({
                   </article>
                 ))}
               </div>
+              <div className="review-queue-heading"><div><strong>AI 咨询处理</strong><small>核对当时问题、现场输入与知识边界</small></div><span>{pendingConsultationCount} 待复盘</span></div>
+              <div className="review-consultation-queue">
+                {sessionConsultations.length > 0 ? sessionConsultations.map((consultation) => <article className={consultation.status} key={`review:${consultation.projectId}:${consultation.id}`}>
+                  <div><span>{consultation.mode} · {consultation.speaker}</span><strong>{consultation.question}</strong><small>{consultation.sourceLabels.length} 份依据 · {consultation.includesPlayerDisclosures ? `${consultation.playerDisclosures?.length ?? 0} 份玩家已知资料` : "未纳入玩家已知资料"}</small></div>
+                  {consultation.status === "pending"
+                    ? <button onClick={() => handleReviewConsultation(consultation.projectId, consultation.id)}>标为已复盘</button>
+                    : <em>已复盘 · 未写入设定</em>}
+                </article>) : <p>本场没有采用为草稿的 AI 咨询。</p>}
+              </div>
             </section>
 
             <aside className="archive-secondary-column">
               <section className="archive-card decision-summary">
                 <span className="eyebrow">本次归档</span>
                 <dl>
-                  <div><dt>待确认</dt><dd>{pendingCount}</dd></div>
+                  <div><dt>待处理总数</dt><dd>{pendingReviewCount}</dd></div>
+                  <div><dt>临场待确认</dt><dd>{pendingRecordCount}</dd></div>
+                  <div><dt>AI 待复盘</dt><dd>{pendingConsultationCount}</dd></div>
                   <div><dt>长期事实</dt><dd>{records.filter((item) => item.status === "客观事实").length}</dd></div>
                   <div><dt>仅本场</dt><dd>{records.filter((item) => item.status === "仅本场").length}</dd></div>
                 </dl>
