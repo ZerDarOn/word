@@ -142,13 +142,14 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
 });
 
 test("connects the full creative workflow from project creation to version review", async () => {
-  const [workspace, projectData, creationDialog, projectStudio, narrativeViews, documentEditor] = await Promise.all([
+  const [workspace, projectData, creationDialog, projectStudio, narrativeViews, documentEditor, versionWorkbench] = await Promise.all([
     readFile(new URL("../app/creative_writing_workspace.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_project_data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_project_creation_dialog.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_narrative_views.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/creative_document_editor.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_version_workbench.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(workspace, /handleCreateProject/);
@@ -170,7 +171,7 @@ test("connects the full creative workflow from project creation to version revie
   assert.match(projectStudio, /handleCreateSnapshot/);
   assert.match(documentEditor, /插入素材/);
   assert.match(narrativeViews, /人物关系/);
-  assert.match(projectStudio, /不会自动覆盖当前正文/);
+  assert.match(versionWorkbench, /不会自动覆盖当前正文/);
 });
 
 test("provides hierarchical narrative architecture and tabletop-specific layers", async () => {
@@ -612,4 +613,20 @@ test("provides an evidence-first project consistency resolution workbench", asyn
   assert.match(workbench, /确认处理结论/);
   assert.match(workbench, /不会自动修改正文、设定卡或团历史/);
   assert.match(studio, /<CreativeConsistencyWorkbench/);
+});
+
+test("persists whole-project snapshots with comparison and protected restore", async () => {
+  const [versionWorkbench, studio] = await Promise.all([
+    readFile(new URL("../app/creative_version_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(versionWorkbench, /与当前项目比较/);
+  assert.match(versionWorkbench, /快照字数/);
+  assert.match(versionWorkbench, /当前相对快照有变化/);
+  assert.match(versionWorkbench, /恢复前最后确认/);
+  assert.match(versionWorkbench, /确认恢复/);
+  assert.match(studio, /snapshotStorageKey/);
+  assert.match(studio, /恢复前保护/);
+  assert.match(studio, /<CreativeVersionWorkbench/);
 });

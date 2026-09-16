@@ -12,6 +12,7 @@ import { CreativeDocumentEditor, type WritingMetadata } from "./creative_documen
 import { CreativeWritingInspector } from "./creative_writing_inspector";
 import { CreativeBackupImport, type LoreCueBackupDocument } from "./creative_backup_import";
 import { CreativeConsistencyWorkbench } from "./creative_consistency_workbench";
+import { CreativeVersionWorkbench, type LoreCueWritingSnapshot } from "./creative_version_workbench";
 
 const outlineCards = [
   { index: "01", title: "无潮之夜", purpose: "建立城市规则与来信", status: "已完成" },
@@ -25,13 +26,6 @@ const timelineEvents = [
   { time: "三日前", title: "缺页名册出现", layer: "故事时间", note: "由匿名包裹送到港务处。" },
   { time: "第一章", title: "读者首次看到斯诺森", layer: "叙述顺序", note: "此时不揭示他的工种。" },
   { time: "第二章", title: "伊芙琳交出名册", layer: "叙述顺序", note: "与真实发生顺序错位。" },
-];
-
-const versionItems = [
-  { id: "v18", label: "自动快照 18", time: "今天 14:32", note: "正文增加 284 字", current: true },
-  { id: "v17", label: "港务处对白调整", time: "今天 13:06", note: "手动保存 · 可恢复", current: false },
-  { id: "v16", label: "一致性检查前", time: "昨天 22:18", note: "AI 未修改正文", current: false },
-  { id: "v15", label: "第二章初稿", time: "7 月 27 日", note: "手动保存 · 可恢复", current: false },
 ];
 
 const openingDraft = "雨停以后，萨菲港的雾反而更重了。\n\n伊芙琳把那册发霉的值班记录推过桌面。名册上有一行被墨水反复涂抹，但纸张背面的压痕仍然留下了一个姓氏：斯诺森。\n\n“港务处从不删除名字，”她说，“除非那个人从来没有来过。”";
@@ -54,6 +48,14 @@ function createInitialDocuments(project: CreativeProject): StudioDocument[] {
   })));
 }
 
+function cloneDocuments(documents: StudioDocument[]): StudioDocument[] {
+  return JSON.parse(JSON.stringify(documents)) as StudioDocument[];
+}
+
+function createInitialSnapshots(project: CreativeProject): LoreCueWritingSnapshot[] {
+  return [{ id: `${project.id}-snapshot-1`, label: "项目初始状态", createdAt: "项目创建时", reason: "初始快照", documents: createInitialDocuments(project) }];
+}
+
 interface CreativeProjectStudioProps {
   project: CreativeProject;
   onBack: () => void;
@@ -73,11 +75,12 @@ export function CreativeProjectStudio({
   const [showArchived, setShowArchived] = useState(false);
   const [lastArchivedId, setLastArchivedId] = useState<string | null>(null);
   const [preImportDocuments, setPreImportDocuments] = useState<StudioDocument[] | null>(null);
+  const [snapshots, setSnapshots] = useState<LoreCueWritingSnapshot[]>(() => createInitialSnapshots(project));
   const [saveState, setSaveState] = useState<"已保存" | "保存中" | "尚未保存">("已保存");
   const [storageReady, setStorageReady] = useState(false);
   const [feedback, setFeedback] = useState("正文会自动保存到当前浏览器；AI 修改仍需逐项确认。");
-  const [snapshotCount, setSnapshotCount] = useState(18);
   const storageKey = `lorecue-writing:${project.id}`;
+  const snapshotStorageKey = `${storageKey}:snapshots`;
   const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
   const archivedCount = documents.filter((document) => document.archived).length;
   const visibleDocuments = useMemo(() => {
@@ -97,6 +100,11 @@ export function CreativeProjectStudio({
             setFeedback(`已从当前浏览器恢复 ${restored.length} 篇文档。`);
           }
         }
+        const storedSnapshots = window.localStorage.getItem(snapshotStorageKey);
+        if (storedSnapshots) {
+          const restoredSnapshots = JSON.parse(storedSnapshots) as LoreCueWritingSnapshot[];
+          if (Array.isArray(restoredSnapshots) && restoredSnapshots.length > 0) setSnapshots(restoredSnapshots);
+        }
       } catch {
         setFeedback("浏览器中的写作草稿无法读取，当前使用项目初始内容。");
       } finally {
@@ -104,7 +112,7 @@ export function CreativeProjectStudio({
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [storageKey]);
+  }, [snapshotStorageKey, storageKey]);
 
   useEffect(() => {
     if (!storageReady) return;
@@ -120,6 +128,11 @@ export function CreativeProjectStudio({
     };
   }, [documents, storageKey, storageReady]);
 
+  useEffect(() => {
+    if (!storageReady) return;
+    window.localStorage.setItem(snapshotStorageKey, JSON.stringify(snapshots));
+  }, [snapshotStorageKey, snapshots, storageReady]);
+
   function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body" | "note" | "metadata">>) {
     setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, ...change, updatedAt: "刚刚" } : document));
     setSaveState("尚未保存");
@@ -132,8 +145,23 @@ export function CreativeProjectStudio({
   }
 
   function handleCreateSnapshot() {
-    setSnapshotCount((count) => count + 1);
-    setFeedback(`已建立手动快照 ${snapshotCount + 1}，不会覆盖旧版本。`);
+    let sequence = snapshots.length + 1;
+    while (snapshots.some((snapshot) => snapshot.id === `${project.id}-snapshot-${sequence}`)) sequence += 1;
+    const snapshot: LoreCueWritingSnapshot = { id: `${project.id}-snapshot-${sequence}`, label: `手动快照 ${sequence}`, createdAt: new Date().toLocaleString("zh-CN"), reason: "作者手动建立", documents: cloneDocuments(documents) };
+    setSnapshots((current) => [snapshot, ...current]);
+    setFeedback(`已建立“${snapshot.label}”，包含 ${documents.length} 篇文档。`);
+  }
+
+  function handleRestoreSnapshot(snapshot: LoreCueWritingSnapshot) {
+    let sequence = snapshots.length + 1;
+    while (snapshots.some((item) => item.id === `${project.id}-snapshot-${sequence}`)) sequence += 1;
+    const protection: LoreCueWritingSnapshot = { id: `${project.id}-snapshot-${sequence}`, label: "恢复前保护", createdAt: new Date().toLocaleString("zh-CN"), reason: `恢复“${snapshot.label}”前自动建立`, documents: cloneDocuments(documents) };
+    const restored = cloneDocuments(snapshot.documents);
+    setSnapshots((current) => [protection, ...current]);
+    setDocuments(restored);
+    setActiveDocumentId(restored.find((document) => !document.archived)?.id ?? restored[0].id);
+    setSaveState("尚未保存");
+    setFeedback(`已恢复“${snapshot.label}”；恢复前状态保存在“${protection.label}”。`);
   }
 
   function handleCreateDocument(group: string) {
@@ -269,31 +297,7 @@ export function CreativeProjectStudio({
     }
 
     if (activeView === "版本") {
-      return (
-        <section className="studio-board">
-          <div className="studio-page-heading">
-            <div><span className="eyebrow">版本与快照</span><h2>每次大改，都留一条回去的路。</h2><p>AI 建议、人工编辑和正式定稿分别记录，不会自动覆盖当前正文。</p></div>
-            <button className="primary-action" onClick={handleCreateSnapshot}>建立手动快照</button>
-          </div>
-          <div className="version-layout">
-            <div className="version-list">
-              {versionItems.map((version, index) => (
-                <button className={index === 0 ? "active" : ""} key={version.id}>
-                  <span>{index === 0 ? `v${snapshotCount}` : version.id}</span>
-                  <strong>{version.label}</strong><small>{version.time} · {version.note}</small>
-                </button>
-              ))}
-            </div>
-            <section className="version-compare">
-              <span className="eyebrow">版本比较</span>
-              <h3>当前版本与“港务处对白调整”</h3>
-              <div className="diff-block"><del>港务处从来不会删掉名字。</del><ins>港务处从不删除名字，除非那个人从来没有来过。</ins></div>
-              <p>恢复旧版本会先自动建立当前快照；这个按钮目前只演示流程。</p>
-              <button onClick={() => setFeedback("已模拟恢复前保护：先建立当前快照，再进入确认步骤。")}>准备恢复此版本</button>
-            </section>
-          </div>
-        </section>
-      );
+      return <CreativeVersionWorkbench documents={documents} snapshots={snapshots} onCreateSnapshot={handleCreateSnapshot} onRestoreSnapshot={handleRestoreSnapshot} />;
     }
 
     if (activeView === "一致性检查") {
