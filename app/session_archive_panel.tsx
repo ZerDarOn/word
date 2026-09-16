@@ -117,6 +117,7 @@ export function SessionArchivePanel({
   const [draftTitle, setDraftTitle] = useState("未命名场次");
   const [draftPlan, setDraftPlan] = useState("承接灰潮号靠港线索，等待团后复盘完成后补充。");
   const [handoffItems, setHandoffItems] = useState<LoreCueHandoffItem[]>(baselineHandoffItems);
+  const [draftHandoffItems, setDraftHandoffItems] = useState<LoreCueHandoffItem[]>([]);
   const [manualHandoffKind, setManualHandoffKind] = useState<LoreCueHandoffItem["kind"]>("未决问题");
   const [manualHandoffText, setManualHandoffText] = useState("");
   const [manualHandoffSource, setManualHandoffSource] = useState("");
@@ -132,6 +133,7 @@ export function SessionArchivePanel({
       setDraftTitle(archive.draftTitle);
       setDraftPlan(archive.draftPlan);
       setHandoffItems(buildHandoffCandidates(archive.records, archive.handoffItems));
+      setDraftHandoffItems(archive.draftHandoffItems);
       setFeedback(`场次数据仓 v1 已就绪 · ${archive.sessions.length} 次团 · ${archive.records.length} 条临场记录。`);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -184,6 +186,7 @@ export function SessionArchivePanel({
     setSelectedSessionId(draft.id);
     setDraftTitle("未命名场次");
     setDraftPlan("承接灰潮号靠港线索，等待团后复盘完成后补充。");
+    setDraftHandoffItems([]);
     setFeedback("已新建第 4 次团草稿并保存到本团场次数据仓。");
   }
 
@@ -274,8 +277,9 @@ export function SessionArchivePanel({
     setSelectedSessionId(draft.id);
     setDraftTitle(nextTitle);
     setDraftPlan(nextPlan);
+    setDraftHandoffItems(selectedItems);
     saveCampaignHandoff(campaignId, handoffItems);
-    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id);
+    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id, selectedItems);
     setFeedback(`已把 ${selectedItems.length} 条有来源的承接项写入第 4 次团草稿。`);
   }
 
@@ -284,7 +288,7 @@ export function SessionArchivePanel({
       ? { ...session, title: draftTitle.trim() || "未命名场次" }
       : session);
     setSessions(nextSessions);
-    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId);
+    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId, draftHandoffItems);
     setFeedback("下一次团草稿已保存；不会改动已归档的历史场次。");
   }
 
@@ -445,6 +449,13 @@ export function SessionArchivePanel({
             </div>
             <label>暂定标题<input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></label>
             <label>准备推进到哪里<textarea rows={4} value={draftPlan} onChange={(event) => setDraftPlan(event.target.value)} /></label>
+            <section className="draft-handoff-snapshot" aria-label="草稿承接来源快照">
+              <header><div><span className="eyebrow">承接依据 · 写入快照</span><h3>这份草稿从哪里来</h3></div><b>{draftHandoffItems.length}</b></header>
+              {draftHandoffItems.length > 0 ? <div>{draftHandoffItems.map((item) => <article key={`draft-${item.id}`}>
+                <span>{item.kind}</span><strong>{item.text}</strong><small>{item.sourceSessionLabel} · {item.sourceLabel}</small>
+              </article>)}</div> : <p>尚未从团后复盘写入承接项；手写计划仍可保存，但不会被标成已有来源的复盘结论。</p>}
+              <small>之后改变候选勾选不会回写这份快照；只有再次执行“写入第 4 次团草稿”才会更新。</small>
+            </section>
             <button onClick={handleSaveDraft}>保存草稿</button>
           </section>
         )}

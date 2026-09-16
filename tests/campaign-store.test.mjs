@@ -126,7 +126,14 @@ test("brief, objectives, session list, and next-session draft update independent
     { id: "session-4", number: "第 4 次团", title: "未命名场次", date: "待安排", time: "时间未定", status: "草稿" },
   ];
   store.saveCampaignSessions("campaign-a", sessions, "session-4");
-  store.saveCampaignDraft("campaign-a", "灰潮号靠港", "从船期异常继续推进", sessions, "session-4");
+  store.saveCampaignDraft(
+    "campaign-a",
+    "灰潮号靠港",
+    "从船期异常继续推进",
+    sessions,
+    "session-4",
+    store.readCampaignArchive("campaign-a").handoffItems,
+  );
 
   const archive = store.readCampaignArchive("campaign-a");
   assert.equal(archive.brief, "新的团前简报");
@@ -135,6 +142,8 @@ test("brief, objectives, session list, and next-session draft update independent
   assert.equal(archive.handoffItems[0].kind, "长期事实");
   assert.equal(archive.handoffItems[0].selected, true);
   assert.equal(archive.handoffItems[0].sourceSessionId, "session-3");
+  assert.equal(archive.draftHandoffItems.length, 1);
+  assert.equal(archive.draftHandoffItems[0].sourceLabel, "船期表 · 已确认");
   assert.equal(archive.sessions.length, 2);
   assert.equal(archive.selectedSessionId, "session-4");
   assert.equal(archive.draftTitle, "灰潮号靠港");

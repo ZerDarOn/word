@@ -695,6 +695,16 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   color: white; font-size: 11px; font-weight: 800; background: var(--accent); cursor: pointer;
 }
 .draft-session-card button:hover { background: var(--accent-dark); }
+.draft-handoff-snapshot { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-soft); }
+.draft-handoff-snapshot header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.draft-handoff-snapshot h3 { margin: 3px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
+.draft-handoff-snapshot header > b { min-width: 24px; padding: 4px 7px; border-radius: 999px; color: var(--accent-dark); font-size: 10px; text-align: center; background: var(--accent-soft); }
+.draft-handoff-snapshot > div { display: grid; gap: 7px; }
+.draft-handoff-snapshot article { display: grid; gap: 4px; padding: 10px; border-inline-start: 3px solid var(--forest); border-radius: 5px; background: var(--paper); }
+.draft-handoff-snapshot article span { color: var(--forest); font-size: 9px; font-weight: 800; }
+.draft-handoff-snapshot article strong { font-size: 12px; line-height: 1.5; }
+.draft-handoff-snapshot article small, .draft-handoff-snapshot > small { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.draft-handoff-snapshot > p { padding: 10px; border: 1px dashed var(--line-strong); border-radius: 5px; background: var(--paper); }
 
 .topbar-actions { display: flex; align-items: center; gap: 14px; }
 .global-ai-button {
