@@ -760,13 +760,27 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .document-full-search span { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; }
 .document-full-search input { width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-size: 9px; background: var(--panel); }
 .document-management-panel { display: grid; gap: 7px; padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
-.document-management-panel > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.document-management-panel > .document-action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .document-management-panel button, .archive-controls button { min-height: 27px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 7px; font-weight: 800; background: var(--paper); cursor: pointer; }
 .document-management-panel button:hover, .archive-controls button:hover { color: var(--accent); border-color: var(--accent); }
 .document-management-panel label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 7px; color: var(--muted); font-size: 7px; font-weight: 800; }
 .document-management-panel select { min-width: 0; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-size: 7px; background: var(--paper); }
 .archive-controls { display: flex; gap: 5px; }
 .archive-controls button { flex: 1; background: var(--panel); }
+.undo-import-button { min-height: 29px; border: 1px solid var(--blue); border-radius: 5px; color: var(--blue); font-size: 7px; font-weight: 800; background: var(--blue-soft); cursor: pointer; }
+.backup-import-error { grid-column: 1 / -1; margin: 4px 0 0; color: var(--accent); font-size: 7px; line-height: 1.5; }
+.backup-import-preview { position: fixed; z-index: 70; inset: 50% auto auto 50%; width: min(470px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--line); border-top: 4px solid var(--blue); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); transform: translate(-50%, -50%); }
+.backup-import-preview > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 11px; border-bottom: 1px solid var(--line); }
+.backup-import-preview > header h3 { margin: 6px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 17px; }
+.backup-import-preview > header button { border: 0; color: var(--muted); font-size: 18px; background: transparent; cursor: pointer; }
+.backup-import-preview > p { color: var(--muted); font-size: 9px; line-height: 1.7; }
+.backup-import-preview dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
+.backup-import-preview dl div { padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper-deep); }
+.backup-import-preview dt { color: var(--muted); font-size: 7px; }
+.backup-import-preview dd { margin: 5px 0 0; font-size: 10px; font-weight: 800; }
+.backup-import-preview footer { display: flex; justify-content: flex-end; gap: 7px; padding-top: 12px; border-top: 1px solid var(--line); }
+.backup-import-preview footer button { min-height: 32px; padding: 6px 11px; border: 1px solid var(--line); border-radius: 5px; font-size: 8px; font-weight: 800; background: var(--paper); cursor: pointer; }
+.backup-import-preview footer .primary-action { color: white; border-color: var(--accent); background: var(--accent); }
 .document-search-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); font-size: 9px; text-align: center; }
 .document-tree section > div { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
 .document-tree section > div strong { color: var(--muted); font-size: 9px; letter-spacing: 0.12em; }

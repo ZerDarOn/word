@@ -10,6 +10,7 @@ import { CreativeProjectNavigation } from "./creative_project_navigation";
 import { CreativeNarrativeView } from "./creative_narrative_views";
 import { CreativeDocumentEditor, type WritingMetadata } from "./creative_document_editor";
 import { CreativeWritingInspector } from "./creative_writing_inspector";
+import { CreativeBackupImport, type LoreCueBackupDocument } from "./creative_backup_import";
 
 const outlineCards = [
   { index: "01", title: "无潮之夜", purpose: "建立城市规则与来信", status: "已完成" },
@@ -34,16 +35,7 @@ const versionItems = [
 
 const openingDraft = "雨停以后，萨菲港的雾反而更重了。\n\n伊芙琳把那册发霉的值班记录推过桌面。名册上有一行被墨水反复涂抹，但纸张背面的压痕仍然留下了一个姓氏：斯诺森。\n\n“港务处从不删除名字，”她说，“除非那个人从来没有来过。”";
 
-interface StudioDocument {
-  id: string;
-  group: string;
-  title: string;
-  body: string;
-  updatedAt: string;
-  note?: string;
-  metadata?: WritingMetadata;
-  archived?: boolean;
-}
+interface StudioDocument extends LoreCueBackupDocument { metadata?: WritingMetadata }
 
 function createInitialDocuments(project: CreativeProject): StudioDocument[] {
   return documentTreeByKind[project.kind].flatMap((group, groupIndex) => group.items.map((title, itemIndex) => ({
@@ -79,6 +71,7 @@ export function CreativeProjectStudio({
   const [documentQuery, setDocumentQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [lastArchivedId, setLastArchivedId] = useState<string | null>(null);
+  const [preImportDocuments, setPreImportDocuments] = useState<StudioDocument[] | null>(null);
   const [saveState, setSaveState] = useState<"已保存" | "保存中" | "尚未保存">("已保存");
   const [storageReady, setStorageReady] = useState(false);
   const [feedback, setFeedback] = useState("正文会自动保存到当前浏览器；AI 修改仍需逐项确认。");
@@ -206,6 +199,27 @@ export function CreativeProjectStudio({
     setFeedback(`已导出 ${documents.length} 篇文档的项目备份。`);
   }
 
+  function handleImportProjectBackup(importedDocuments: LoreCueBackupDocument[]) {
+    window.localStorage.setItem(`${storageKey}:pre-import`, JSON.stringify(documents));
+    setPreImportDocuments(documents);
+    setDocuments(importedDocuments);
+    setActiveDocumentId(importedDocuments.find((document) => !document.archived)?.id ?? importedDocuments[0].id);
+    setShowArchived(false);
+    setLastArchivedId(null);
+    setSaveState("尚未保存");
+    setFeedback(`已导入 ${importedDocuments.length} 篇文档；当前导入可撤销。`);
+  }
+
+  function handleUndoImport() {
+    if (!preImportDocuments) return;
+    setDocuments(preImportDocuments);
+    setActiveDocumentId(preImportDocuments.find((document) => !document.archived)?.id ?? preImportDocuments[0].id);
+    setPreImportDocuments(null);
+    setShowArchived(false);
+    setSaveState("尚未保存");
+    setFeedback("已撤销备份导入，恢复导入前的项目状态。");
+  }
+
   function renderStudioContent() {
     if (activeView === "大纲") {
       return (
@@ -324,9 +338,10 @@ export function CreativeProjectStudio({
         <div className="document-tree" hidden={activeView !== "正文"}>
           <label className="document-full-search"><span>全文搜索</span><input value={documentQuery} onChange={(event) => setDocumentQuery(event.target.value)} placeholder="标题或正文内容" /></label>
           <div className="document-management-panel">
-            <div><button onClick={handleDuplicateDocument}>复制</button><button onClick={handleArchiveDocument}>归档</button><button onClick={handleExportProjectBackup}>备份</button></div>
+            <div className="document-action-grid"><button onClick={handleDuplicateDocument}>复制</button><button onClick={handleArchiveDocument}>归档</button><button onClick={handleExportProjectBackup}>备份</button><CreativeBackupImport projectId={project.id} onApply={handleImportProjectBackup} onFeedback={setFeedback} /></div>
             <label>移动到<select value={activeDocument.group} onChange={(event) => handleMoveDocument(event.target.value)}>{documentTree.map((group) => <option key={group.group}>{group.group}</option>)}</select></label>
           </div>
+          {preImportDocuments && <button className="undo-import-button" onClick={handleUndoImport}>撤销最近一次导入</button>}
           {(archivedCount > 0 || lastArchivedId) && <div className="archive-controls"><button onClick={() => setShowArchived((current) => !current)}>{showArchived ? "隐藏归档" : `查看归档 ${archivedCount}`}</button>{lastArchivedId && <button onClick={handleUndoArchive}>撤销归档</button>}</div>}
           {documentTree.map((group) => {
             const groupDocuments = visibleDocuments.filter((document) => document.group === group.group);

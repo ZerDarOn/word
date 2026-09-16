@@ -581,3 +581,19 @@ test("manages large document sets with recoverable archiving and project backups
   assert.match(studio, /LoreCue备份\.json/);
   assert.match(studio, /原文档没有变化/);
 });
+
+test("validates backup identity and previews imports before recoverable replacement", async () => {
+  const [backupImport, studio] = await Promise.all([
+    readFile(new URL("../app/creative_backup_import.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(backupImport, /5 \* 1024 \* 1024/);
+  assert.match(backupImport, /lorecue-writing-backup/);
+  assert.match(backupImport, /parsed\.project\?\.id !== projectId/);
+  assert.match(backupImport, /预览阶段没有改动当前项目/);
+  assert.match(backupImport, /确认导入并保留撤销点/);
+  assert.match(studio, /:pre-import/);
+  assert.match(studio, /handleUndoImport/);
+  assert.match(studio, /撤销最近一次导入/);
+});
