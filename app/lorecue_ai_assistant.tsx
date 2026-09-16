@@ -20,6 +20,17 @@ interface ContextSource {
   defaultSelected: boolean;
 }
 
+interface ConsultationDraft {
+  id: string;
+  mode: AiMode;
+  speaker: string;
+  question: string;
+  sourceLabels: string[];
+  includesLiveContext: boolean;
+  createdAt: string;
+  status: "pending" | "reviewed";
+}
+
 const contextSources: ContextSource[] = [
   { id: "current", label: "当前条目", detail: "正在查看的场景与段落", kind: "source", defaultSelected: true },
   { id: "character", label: "角色档案", detail: "公开信息与主持人秘密分开读取", kind: "private", defaultSelected: true },
@@ -35,6 +46,29 @@ const kindLabels: Record<SourceKind, string> = {
 };
 
 const speakers = ["主持人视角", "伊芙琳", "斯诺森", "不代入角色"];
+const demoAnswer = "伊芙琳知道斯诺森在码头卸货，但现有资料没有写明他的住址。她可以提供外貌、工种和下班时间；具体住址需要调查，或由主持人临场补全。";
+
+function consultationStorageKey(scope: string) {
+  return `lorecue-ai-consultations:${scope}`;
+}
+
+function readConsultationDrafts(scope: string): ConsultationDraft[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = window.localStorage.getItem(consultationStorageKey(scope));
+    if (!stored) return [];
+    const parsed = JSON.parse(stored) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is ConsultationDraft => (
+      typeof item === "object" && item !== null
+      && typeof (item as ConsultationDraft).id === "string"
+      && typeof (item as ConsultationDraft).question === "string"
+      && ((item as ConsultationDraft).status === "pending" || (item as ConsultationDraft).status === "reviewed")
+    )).slice(0, 12);
+  } catch {
+    return [];
+  }
+}
 
 export function LoreCueAiAssistant({
   open,
@@ -53,6 +87,7 @@ export function LoreCueAiAssistant({
   const [showAdoptionReview, setShowAdoptionReview] = useState(false);
   const [adoptionStatus, setAdoptionStatus] = useState<"idle" | "pending">("idle");
   const [feedback, setFeedback] = useState("");
+  const [consultationDrafts, setConsultationDrafts] = useState<ConsultationDraft[]>(() => readConsultationDrafts(scope));
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSources = useMemo(
@@ -101,9 +136,8 @@ export function LoreCueAiAssistant({
   }
 
   async function handleCopy() {
-    const answer = "伊芙琳知道斯诺森在码头卸货，但现有资料没有写明他的住址。她可以提供外貌、工种和下班时间；具体住址需要调查，或由主持人临场补全。";
     try {
-      await navigator.clipboard.writeText(answer);
+      await navigator.clipboard.writeText(demoAnswer);
       setFeedback("建议已复制；来源标签不会因此写入项目。 ");
     } catch {
       setFeedback("浏览器未允许复制，请手动选中建议文本。 ");
@@ -111,11 +145,33 @@ export function LoreCueAiAssistant({
   }
 
   function handleConfirmDraft() {
+    const nextDraft: ConsultationDraft = {
+      id: `${Date.now()}`,
+      mode,
+      speaker,
+      question: question.trim(),
+      sourceLabels: activeSources.map((source) => source.label),
+      includesLiveContext: Boolean(liveContext.trim()),
+      createdAt: new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
+      status: "pending",
+    };
+    const nextDrafts = [nextDraft, ...consultationDrafts].slice(0, 12);
+    setConsultationDrafts(nextDrafts);
+    window.localStorage.setItem(consultationStorageKey(scope), JSON.stringify(nextDrafts));
     setAdoptionStatus("pending");
     setShowAdoptionReview(false);
     setFeedback(mode === "GM 救场"
       ? "已加入本场待确认记录；团后仍需决定是否升级为正式设定。"
       : "已加入待确认草稿；没有覆盖原文或角色档案。");
+  }
+
+  function handleMarkReviewed(draftId: string) {
+    const nextDrafts = consultationDrafts.map((draft) => draft.id === draftId
+      ? { ...draft, status: "reviewed" as const }
+      : draft);
+    setConsultationDrafts(nextDrafts);
+    window.localStorage.setItem(consultationStorageKey(scope), JSON.stringify(nextDrafts));
+    setFeedback("该条咨询已标为已复盘；它仍未自动成为正式设定。");
   }
 
   function handleDialogKeyDown(event: KeyboardEvent<HTMLElement>) {
@@ -254,7 +310,7 @@ export function LoreCueAiAssistant({
               <span className="evidence-badge inferred">合理推断</span>
               <small>交互演示 · 未调用真实 AI</small>
             </div>
-            <p>伊芙琳知道斯诺森在码头卸货，但现有资料没有写明他的住址。她可以提供外貌、工种和下班时间；具体住址需要调查，或由主持人临场补全。</p>
+            <p>{demoAnswer}</p>
 
             <div className="ai-used-context">
               <strong>实际采用的上下文</strong>
@@ -294,6 +350,33 @@ export function LoreCueAiAssistant({
           <section className="ai-empty">
             <strong>AI 不会自己猜当前进度</strong>
             <p>它只读取你勾选的资料和主动贴入的现场信息；语音与群聊接入以后也应先由主持人确认。</p>
+          </section>
+        )}
+
+        {consultationDrafts.length > 0 && (
+          <section className="ai-consultation-inbox" aria-labelledby="ai-inbox-title">
+            <div className="ai-section-heading">
+              <div><span className="eyebrow">项目内留痕</span><h3 id="ai-inbox-title">待确认咨询</h3></div>
+              <span>{consultationDrafts.filter((draft) => draft.status === "pending").length} 待复盘</span>
+            </div>
+            <div className="ai-consultation-list">
+              {consultationDrafts.slice(0, 3).map((draft) => (
+                <article className={draft.status} key={draft.id}>
+                  <div>
+                    <span>{draft.mode} · {draft.speaker}</span>
+                    <small>{draft.createdAt}</small>
+                  </div>
+                  <p>{draft.question}</p>
+                  <footer>
+                    <span>{draft.sourceLabels.length} 份资料{draft.includesLiveContext ? " + 现场输入" : ""}</span>
+                    {draft.status === "pending"
+                      ? <button onClick={() => handleMarkReviewed(draft.id)}>标为已复盘</button>
+                      : <em>已复盘 · 未写入设定</em>}
+                  </footer>
+                </article>
+              ))}
+            </div>
+            {consultationDrafts.length > 3 && <small className="ai-inbox-overflow">另有 {consultationDrafts.length - 3} 条保存在当前项目</small>}
           </section>
         )}
         <p className="ai-feedback" aria-live="polite">{feedback}</p>
