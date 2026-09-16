@@ -1,5 +1,6 @@
 export const LORECUE_ASSET_USAGE_FORMAT = "lorecue-asset-usage";
 export const LORECUE_ASSET_USAGE_VERSION = 1;
+export const LORECUE_ASSET_USAGE_EVENT = "lorecue:asset-usage-changed";
 
 export type LoreCueAssetUsageSurface = "map-node" | "encounter" | "player-attachment" | "player-handout";
 export type LoreCueDeliveryStatus = "active" | "revoked";
@@ -127,6 +128,7 @@ function writeEnvelope(envelope: LoreCueAssetUsageEnvelope) {
   if (typeof window === "undefined") return envelope;
   const next = { ...envelope, updatedAt: now() };
   window.localStorage.setItem(storageKey(envelope.projectId), JSON.stringify(next));
+  window.dispatchEvent?.(new CustomEvent(LORECUE_ASSET_USAGE_EVENT, { detail: { projectId: envelope.projectId } }));
   return next;
 }
 
@@ -145,6 +147,12 @@ export function saveAssetBinding(projectId: string, binding: Omit<LoreCueAssetBi
   const nextBinding: LoreCueAssetBinding = { ...binding, id, updatedAt: now() };
   const bindings = [nextBinding, ...current.bindings.filter((item) => item.id !== id)];
   return writeEnvelope({ ...current, bindings });
+}
+
+export function removeAssetBinding(projectId: string, surface: LoreCueAssetUsageSurface, surfaceId: string) {
+  const current = ensureAssetUsageEnvelope(projectId);
+  const id = `${surface}:${surfaceId}`;
+  return writeEnvelope({ ...current, bindings: current.bindings.filter((binding) => binding.id !== id) });
 }
 
 export function addAssetDelivery(projectId: string, delivery: Omit<LoreCueAssetDelivery, "id" | "deliveredAt" | "status">) {

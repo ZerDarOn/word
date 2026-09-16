@@ -164,6 +164,9 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(library, /importAssetFile/);
   assert.match(library, /当前浏览器/);
   assert.match(library, /剧透与披露/);
+  assert.match(library, /使用位置/);
+  assert.match(library, /取消引用会留下失效绑定/);
+  assert.match(library, /保留记录并取消引用/);
   assert.match(aiAssistant, /当前检索范围/);
   assert.match(aiAssistant, /原文依据/);
   assert.match(aiAssistant, /合理推断/);
@@ -602,7 +605,10 @@ test("persists project-scoped asset bindings and delivery history", async () => 
   assert.match(usageStore, /saveAssetBinding/);
   assert.match(usageStore, /addAssetDelivery/);
   assert.match(usageStore, /revokeAssetDelivery/);
+  assert.match(usageStore, /removeAssetBinding/);
+  assert.match(usageStore, /LORECUE_ASSET_USAGE_EVENT/);
   assert.match(usageHook, /ensureAssetUsageEnvelope/);
+  assert.match(usageHook, /addEventListener/);
 });
 
 test("organizes character portraits by identity, state, and asset provenance", async () => {

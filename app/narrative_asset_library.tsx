@@ -12,6 +12,15 @@ import {
   type LoreCueAssetTarget,
   type LoreCueAssetVisibility,
 } from "./lorecue_asset_store";
+import type { LoreCueAssetUsageSurface } from "./lorecue_asset_usage_store";
+import { useProjectAssetUsage } from "./use_project_asset_usage";
+
+const usageSurfaceLabels: Record<LoreCueAssetUsageSurface, string> = {
+  "map-node": "地图节点",
+  encounter: "地图遭遇",
+  "player-attachment": "玩家附件",
+  "player-handout": "玩家手册",
+};
 
 const initialAssets: LoreCueAssetRecord[] = [
   {
@@ -190,6 +199,8 @@ export function NarrativeAssetLibrary({
     state: "ready" | "missing";
   }>({ assetId: "", url: "", state: "missing" });
   const [feedback, setFeedback] = useState("正在读取浏览器中的资料目录……");
+  const [pendingUnlinkAssetId, setPendingUnlinkAssetId] = useState<string | null>(null);
+  const [assetUsage] = useProjectAssetUsage(currentProjectId);
   const [draft, setDraft] = useState<ImportDraft>({
     title: "",
     kind: "文档",
@@ -229,6 +240,12 @@ export function NarrativeAssetLibrary({
   const selected = assets.find((asset) => asset.id === selectedId) ?? assets[0];
   const selectedLinked = selected ? targetMatches(selected, activeTarget) : false;
   const linkedCount = assets.filter((asset) => targetMatches(asset, activeTarget)).length;
+  const selectedBindings = targetType === "creative" && selected
+    ? assetUsage?.bindings.filter((binding) => binding.assetId === selected.id) ?? []
+    : [];
+  const selectedDeliveries = targetType === "creative" && selected
+    ? assetUsage?.deliveries.filter((delivery) => delivery.assetId === selected.id) ?? []
+    : [];
 
   useEffect(() => {
     let active = true;
@@ -324,13 +341,24 @@ export function NarrativeAssetLibrary({
     }
   }
 
-  function toggleCurrentReference() {
+  function applyCurrentReference(nextLinked: boolean) {
     if (!selected) return;
-    const nextAssets = setAssetTargetLink(assets, selected.id, activeTarget, !selectedLinked);
+    const nextAssets = setAssetTargetLink(assets, selected.id, activeTarget, nextLinked);
     setAssets(nextAssets);
-    setFeedback(selectedLinked
+    setPendingUnlinkAssetId(null);
+    setFeedback(!nextLinked
       ? `已取消“${activeTarget.targetLabel}”的引用；原始资料和其他项目引用不受影响。`
       : `已把“${selected.title}”引用到“${activeTarget.targetLabel}”；它现在可以进入该范围的 AI 检索。`);
+  }
+
+  function toggleCurrentReference() {
+    if (!selected) return;
+    if (selectedLinked && targetType === "creative" && (selectedBindings.length > 0 || selectedDeliveries.length > 0)) {
+      setPendingUnlinkAssetId(selected.id);
+      setFeedback(`“${selected.title}”仍有 ${selectedBindings.length} 个工作台绑定和 ${selectedDeliveries.length} 条发放历史；请确认如何处理断链。`);
+      return;
+    }
+    applyCurrentReference(!selectedLinked);
   }
 
   return (
@@ -361,7 +389,7 @@ export function NarrativeAssetLibrary({
       <section className="library-scope-bar" aria-label="当前引用范围">
         <div><span>检查引用范围</span><strong>{activeTarget.targetLabel}</strong><small>{linkedCount} 条资料已明确引用</small></div>
         <label>范围
-          <select value={targetType} onChange={(event) => setTargetType(event.target.value as "creative" | "campaign")}>
+          <select value={targetType} onChange={(event) => { setTargetType(event.target.value as "creative" | "campaign"); setPendingUnlinkAssetId(null); }}>
             <option value="creative">创作项目 · {currentProjectTitle}</option>
             <option value="campaign">团项目 · {currentCampaignTitle}</option>
           </select>
@@ -392,7 +420,7 @@ export function NarrativeAssetLibrary({
           {visibleAssets.map((asset) => {
             const linked = targetMatches(asset, activeTarget);
             return (
-              <button className={`asset-card ${selected?.id === asset.id ? "active" : ""}`} key={asset.id} onClick={() => setSelectedId(asset.id)}>
+              <button className={`asset-card ${selected?.id === asset.id ? "active" : ""}`} key={asset.id} onClick={() => { setSelectedId(asset.id); setPendingUnlinkAssetId(null); }}>
                 <span className="asset-kind-mark">{asset.kind.slice(0, 1)}</span>
                 <span className="asset-card-copy"><small>{asset.kind} · {asset.ownerLabel}</small><strong>{asset.title}</strong><em>{asset.description}</em></span>
                 <span className={`reference-state ${linked ? "linked" : ""}`}>{linked ? "已引用" : "未引用"}</span>
@@ -423,6 +451,18 @@ export function NarrativeAssetLibrary({
           </dl>
           <section className="asset-boundary-card"><strong>剧透与披露</strong><p>{selected.spoilerNote}</p></section>
           <section className="asset-provenance-card"><strong>素材来源</strong><p>{selected.provenance}</p></section>
+          <section className="asset-usage-card">
+            <header><strong>使用位置</strong><span>{targetType === "creative" ? `${selectedBindings.length} 个当前绑定` : "团项目范围"}</span></header>
+            {targetType === "creative" ? <>
+              {selectedBindings.length > 0 ? <ul>{selectedBindings.map((binding) => <li key={binding.id}><b>{usageSurfaceLabels[binding.surface]}</b><span>{binding.surfaceId}</span></li>)}</ul> : <p>尚未被地图、遭遇或玩家资料绑定。</p>}
+              {selectedDeliveries.length > 0 && <small>{selectedDeliveries.length} 条发放历史将永久保留，其中 {selectedDeliveries.filter((delivery) => delivery.status === "active").length} 条仍可查看。</small>}
+            </> : <p>团项目引用的实际使用与披露记录将在场次档案中汇总。</p>}
+          </section>
+          {pendingUnlinkAssetId === selected.id && <section className="asset-unlink-warning" role="alert">
+            <strong>取消引用会留下失效绑定</strong>
+            <p>使用记录和历史发放不会被删除。对应工作台会标出断链，等待重新绑定或手动解除。</p>
+            <div><button onClick={() => setPendingUnlinkAssetId(null)}>返回检查</button><button onClick={() => applyCurrentReference(false)}>保留记录并取消引用</button></div>
+          </section>}
           <button className={selectedLinked ? "secondary-action" : "primary-action"} onClick={toggleCurrentReference}>
             {selectedLinked ? "取消当前范围引用" : "引用到当前范围"}
           </button>

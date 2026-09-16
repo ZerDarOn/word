@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
-import { saveAssetBinding } from "./lorecue_asset_usage_store";
+import { removeAssetBinding, saveAssetBinding } from "./lorecue_asset_usage_store";
 import type { LoreCueAssetRecord } from "./lorecue_asset_store";
 import { useProjectAssetUsage } from "./use_project_asset_usage";
 import { useProjectAssets } from "./use_project_assets";
@@ -79,6 +79,8 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
   const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = encounters.find((encounter) => encounter.title === selectedTitle) ?? encounters[0];
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "encounter" && binding.surfaceId === selected.title);
+  const boundMap = currentBinding ? linkedMaps.find((asset) => asset.id === currentBinding.assetId) : undefined;
+  const bindingIsStale = Boolean(currentBinding && !boundMap);
 
   function selectEncounter(encounter: EncounterRecord) {
     setSelectedTitle(encounter.title);
@@ -107,6 +109,12 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
     onFeedback(`已把“${asset.title}”设为遭遇“${selected.title}”的底图来源；遭遇区域规则不会改写原图。`);
   }
 
+  function clearEncounterMap() {
+    const next = removeAssetBinding(project.id, "encounter", selected.title);
+    setUsage(next);
+    onFeedback(`已解除遭遇“${selected.title}”的底图绑定；遭遇规则和历史记录仍保留。`);
+  }
+
   return (
     <section className="map-encounter-workbench studio-board">
       <div className="studio-page-heading">
@@ -114,8 +122,8 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
         <button onClick={() => onFeedback("已模拟从现有地图建立新遭遇。")}>＋ 从地图建遭遇</button>
       </div>
 
-      <section className="workbench-asset-strip" aria-label="遭遇可用地图素材">
-        <div><strong>遭遇底图来源</strong><span>{linkedMaps.length} 条项目地图 · 当前：{currentBinding?.assetTitle ?? "尚未绑定"}</span></div>
+      <section className={`workbench-asset-strip ${bindingIsStale ? "has-stale-binding" : ""}`} aria-label="遭遇可用地图素材">
+        <div><strong>遭遇底图来源</strong><span>{linkedMaps.length} 条项目地图 · 当前：{bindingIsStale ? `失效引用 · ${currentBinding?.assetTitle}` : currentBinding?.assetTitle ?? "尚未绑定"}</span>{currentBinding && <button className="asset-clear-binding" onClick={clearEncounterMap}>解除绑定</button>}</div>
         <div>{linkedMaps.length > 0 ? linkedMaps.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindEncounterMap(asset)}>{asset.title}<small>{asset.visibility} · {asset.id}</small></button>) : <p>当前项目没有明确引用的地图，遭遇暂时使用结构化示意图。</p>}</div>
       </section>
 
@@ -132,7 +140,7 @@ export function CreativeMapEncounterWorkbench({ project, onFeedback }: CreativeM
           <nav aria-label="地图遭遇列表">
             {encounters.map((encounter, index) => <button key={encounter.title} className={selectedTitle === encounter.title ? "active" : ""} onClick={() => selectEncounter(encounter)}><b>0{index + 1}</b><span><strong>{encounter.title}</strong><small>{encounter.map}</small></span><em data-state={encounter.state}>{encounter.state}</em></button>)}
           </nav>
-          <section className="encounter-map-source"><span>引用地图</span><strong>{currentBinding?.assetTitle ?? selected.map}</strong><p>{currentBinding ? `稳定素材 ID：${currentBinding.assetId}` : "尚未绑定资料仓底图；编辑遭遇不会修改地图素材本身。"}</p><button onClick={() => onFeedback(currentBinding ? `已定位资料仓地图“${currentBinding.assetTitle}”。` : "请从上方选择一张项目地图。")}>打开地图</button></section>
+          <section className="encounter-map-source"><span>引用地图</span><strong>{currentBinding?.assetTitle ?? selected.map}</strong><p>{bindingIsStale ? `稳定素材 ID：${currentBinding?.assetId} · 当前项目已取消引用` : currentBinding ? `稳定素材 ID：${currentBinding.assetId}` : "尚未绑定资料仓底图；编辑遭遇不会修改地图素材本身。"}</p><button onClick={() => onFeedback(bindingIsStale ? "该底图引用已失效，请重新绑定或解除。" : currentBinding ? `已定位资料仓地图“${currentBinding.assetTitle}”。` : "请从上方选择一张项目地图。")}>打开地图</button></section>
         </aside>
 
         <article className="encounter-editor">

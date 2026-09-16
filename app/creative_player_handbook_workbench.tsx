@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
-import { saveAssetBinding } from "./lorecue_asset_usage_store";
+import { removeAssetBinding, saveAssetBinding } from "./lorecue_asset_usage_store";
 import type { LoreCueAssetRecord } from "./lorecue_asset_store";
 import { useProjectAssetUsage } from "./use_project_asset_usage";
 import { useProjectAssets } from "./use_project_assets";
@@ -79,6 +79,8 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
   const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = handouts.find((handout) => handout.title === selectedTitle) ?? handouts[0];
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "player-handout" && binding.surfaceId === selected.title);
+  const boundSource = currentBinding ? playerSafeAssets.find((asset) => asset.id === currentBinding.assetId) : undefined;
+  const bindingIsStale = Boolean(currentBinding && !boundSource);
 
   function selectHandout(handout: HandoutRecord) {
     setSelectedTitle(handout.title);
@@ -106,6 +108,12 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
     onFeedback(`已把“${asset.title}”绑定为“${selected.title}”的公开来源；主持人私有素材不会出现在候选中。`);
   }
 
+  function clearHandoutSource() {
+    const next = removeAssetBinding(project.id, "player-handout", selected.title);
+    setUsage(next);
+    onFeedback(`已解除“${selected.title}”的来源绑定；玩家资料正文和历史发放仍保留。`);
+  }
+
   return (
     <section className="player-handbook-workbench studio-board">
       <div className="studio-page-heading">
@@ -113,8 +121,8 @@ export function CreativePlayerHandbookWorkbench({ project, onFeedback }: Creativ
         <button onClick={() => onFeedback("已模拟建立一份空白玩家附件。")}>＋ 新建玩家资料</button>
       </div>
 
-      <section className="workbench-asset-strip" aria-label="玩家手册可用素材">
-        <div><strong>公开来源素材</strong><span>{playerSafeAssets.length} 条可用于玩家版本 · 当前：{currentBinding?.assetTitle ?? "未绑定"}</span></div>
+      <section className={`workbench-asset-strip ${bindingIsStale ? "has-stale-binding" : ""}`} aria-label="玩家手册可用素材">
+        <div><strong>公开来源素材</strong><span>{playerSafeAssets.length} 条可用于玩家版本 · 当前：{bindingIsStale ? `失效引用 · ${currentBinding?.assetTitle}` : currentBinding?.assetTitle ?? "未绑定"}</span>{currentBinding && <button className="asset-clear-binding" onClick={clearHandoutSource}>解除绑定</button>}</div>
         <div>{playerSafeAssets.length > 0 ? playerSafeAssets.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindHandoutSource(asset)}>{asset.title}<small>{asset.visibility} · {asset.kind}</small></button>) : <p>当前项目没有玩家可见或按场次解锁的地图、文档或立绘。</p>}</div>
       </section>
 

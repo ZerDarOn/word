@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
 import {
   addAssetDelivery,
+  removeAssetBinding,
   revokeAssetDelivery,
   saveAssetBinding,
   type LoreCueAssetDelivery,
@@ -93,6 +94,8 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
   const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = attachments.find((attachment) => attachment.title === selectedTitle) ?? attachments[0];
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "player-attachment" && binding.surfaceId === selected.title);
+  const boundSource = currentBinding ? sourceAssets.find((asset) => asset.id === currentBinding.assetId) : undefined;
+  const bindingIsStale = Boolean(currentBinding && !boundSource);
   const deliveries = usage?.deliveries.filter((delivery) => delivery.surface === "player-attachment") ?? [];
 
   function selectAttachment(attachment: AttachmentRecord) {
@@ -121,9 +124,15 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
     onFeedback(`已把“${asset.title}”绑定为“${selected.publicTitle}”的主持人原件；玩家版本仍需单独遮罩与预览。`);
   }
 
+  function clearAttachmentSource() {
+    const next = removeAssetBinding(project.id, "player-attachment", selected.title);
+    setUsage(next);
+    onFeedback(`已解除“${selected.publicTitle}”的主持人原件绑定；玩家版本和既有发放历史仍保留。`);
+  }
+
   function handleDeliverAttachment(attachment: AttachmentRecord) {
-    if (!currentBinding) {
-      onFeedback("请先绑定一份资料仓原件，再确认发放；演示文本不能冒充真实附件来源。");
+    if (!currentBinding || bindingIsStale) {
+      onFeedback(bindingIsStale ? "主持人原件引用已经失效，请重新绑定后再发放。" : "请先绑定一份资料仓原件，再确认发放；演示文本不能冒充真实附件来源。");
       return;
     }
     const next = addAssetDelivery(project.id, {
@@ -154,8 +163,8 @@ export function CreativePlayerAttachmentWorkbench({ project, onFeedback }: Creat
       </div>
 
       <section className="attachment-safety-banner"><strong>双版本隔离</strong><span>玩家版本隐藏内部文件名、主持人批注与剧透区域；撤回不会抹除玩家已经看过的信息。</span></section>
-      <section className="workbench-asset-strip" aria-label="玩家附件原件素材">
-        <div><strong>主持人原件来源</strong><span>{sourceAssets.length} 条项目素材 · 当前：{currentBinding?.assetTitle ?? "未绑定"}</span></div>
+      <section className={`workbench-asset-strip ${bindingIsStale ? "has-stale-binding" : ""}`} aria-label="玩家附件原件素材">
+        <div><strong>主持人原件来源</strong><span>{sourceAssets.length} 条项目素材 · 当前：{bindingIsStale ? `失效引用 · ${currentBinding?.assetTitle}` : currentBinding?.assetTitle ?? "未绑定"}</span>{currentBinding && <button className="asset-clear-binding" onClick={clearAttachmentSource}>解除绑定</button>}</div>
         <div>{sourceAssets.length > 0 ? sourceAssets.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindAttachmentSource(asset)}>{asset.title}<small>{asset.kind} · {asset.visibility}</small></button>) : <p>当前项目没有可用地图、文档或立绘；请先到资料库建立引用。</p>}</div>
       </section>
       <section className="attachment-metrics" aria-label="玩家附件概况">

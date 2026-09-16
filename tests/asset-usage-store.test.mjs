@@ -70,6 +70,10 @@ test("asset bindings stay isolated by project, surface, and record", async () =>
   assert.equal(projectA.bindings.length, 2);
   assert.equal(projectA.bindings.find((binding) => binding.surface === "map-node").assetId, "asset-map-a");
   assert.equal(store.readAssetUsageEnvelope("project-b"), null);
+
+  const withoutEncounter = store.removeAssetBinding("project-a", "encounter", "warehouse");
+  assert.equal(withoutEncounter.bindings.length, 1);
+  assert.equal(withoutEncounter.bindings[0].surface, "map-node");
 });
 
 test("revoking a delivery retains its source and disclosure history", async () => {
@@ -92,6 +96,18 @@ test("revoking a delivery retains its source and disclosure history", async () =
   assert.equal(revoked.deliveries[0].assetId, "asset-roster");
   assert.equal(revoked.deliveries[0].recipient, "全体玩家");
   assert.ok(revoked.deliveries[0].revokedAt);
+
+  store.saveAssetBinding("project-a", {
+    surface: "player-attachment",
+    surfaceId: "duty-roster",
+    assetId: "asset-roster",
+    assetTitle: "值班名册原件",
+    visibility: "主持人私有",
+  });
+  const unbound = store.removeAssetBinding("project-a", "player-attachment", "duty-roster");
+  assert.equal(unbound.bindings.length, 0);
+  assert.equal(unbound.deliveries.length, 1);
+  assert.equal(unbound.deliveries[0].status, "revoked");
 });
 
 test("unreadable usage data is quarantined before a clean envelope is written", async () => {

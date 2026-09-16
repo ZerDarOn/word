@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CreativeProject } from "./creative_project_data";
-import { saveAssetBinding } from "./lorecue_asset_usage_store";
+import { removeAssetBinding, saveAssetBinding } from "./lorecue_asset_usage_store";
 import type { LoreCueAssetRecord } from "./lorecue_asset_store";
 import { useProjectAssetUsage } from "./use_project_asset_usage";
 import { useProjectAssets } from "./use_project_assets";
@@ -148,6 +148,8 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
   const [usage, setUsage] = useProjectAssetUsage(project.id);
   const selected = flatMaps.find((node) => node.id === selectedId) ?? flatMaps[0];
   const currentBinding = usage?.bindings.find((binding) => binding.surface === "map-node" && binding.surfaceId === selected.id);
+  const boundMap = currentBinding ? linkedMaps.find((asset) => asset.id === currentBinding.assetId) : undefined;
+  const bindingIsStale = Boolean(currentBinding && !boundMap);
 
   function selectMap(node: FlatMapNode) {
     setSelectedId(node.id);
@@ -164,6 +166,12 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
     });
     setUsage(next);
     onFeedback(`已把资料仓地图“${asset.title}”绑定到“${selected.name}”；底图文件仍保持独立。`);
+  }
+
+  function clearMapAsset() {
+    const next = removeAssetBinding(project.id, "map-node", selected.id);
+    setUsage(next);
+    onFeedback(`已解除“${selected.name}”的底图绑定；资料仓原文件和历史发放不受影响。`);
   }
 
   return (
@@ -183,8 +191,8 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
         ))}
       </div>
 
-      <section className="workbench-asset-strip" aria-label="当前项目已引用地图">
-        <div><strong>资料仓地图</strong><span>{linkedMaps.length} 条明确引用 · 当前节点：{currentBinding?.assetTitle ?? "尚未绑定底图"}</span></div>
+      <section className={`workbench-asset-strip ${bindingIsStale ? "has-stale-binding" : ""}`} aria-label="当前项目已引用地图">
+        <div><strong>资料仓地图</strong><span>{linkedMaps.length} 条明确引用 · 当前节点：{bindingIsStale ? `失效引用 · ${currentBinding?.assetTitle}` : currentBinding?.assetTitle ?? "尚未绑定底图"}</span>{currentBinding && <button className="asset-clear-binding" onClick={clearMapAsset}>解除绑定</button>}</div>
         <div>{linkedMaps.length > 0 ? linkedMaps.map((asset) => <button key={asset.id} className={currentBinding?.assetId === asset.id ? "active" : ""} onClick={() => bindMapAsset(asset)}>{asset.title}<small>{asset.visibility} · {asset.hasBinary ? "本地源文件" : "演示元数据"}</small></button>) : <p>当前项目尚未引用地图；请先到资料库建立引用。</p>}</div>
       </section>
 
@@ -253,7 +261,7 @@ export function CreativeMapHierarchy({ project, onFeedback }: CreativeMapHierarc
           </section>
           <section>
             <span className="eyebrow">底图来源</span>
-            <p>{currentBinding ? `${currentBinding.assetTitle} · ${currentBinding.assetId} · ${currentBinding.visibility}` : "尚未绑定资料仓地图；当前显示结构化示意图。"}</p>
+            <p>{bindingIsStale ? `${currentBinding?.assetTitle} · ${currentBinding?.assetId} · 当前项目已取消引用，请重新绑定或解除。` : currentBinding ? `${currentBinding.assetTitle} · ${currentBinding.assetId} · ${currentBinding.visibility}` : "尚未绑定资料仓地图；当前显示结构化示意图。"}</p>
           </section>
           <section>
             <span className="eyebrow">关联场景 / 遭遇</span>
