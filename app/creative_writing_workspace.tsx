@@ -11,12 +11,14 @@ import { CreativeProjectStudio } from "./creative_project_studio";
 
 interface CreativeWritingWorkspaceProps {
   hidden: boolean;
-  onAskAi: (prompt: string, scope: string) => void;
+  onAskAi: (prompt: string, scope: string, projectId: string) => void;
+  onProjectFocus: (project: CreativeProject | null) => void;
 }
 
 export function CreativeWritingWorkspace({
   hidden,
   onAskAi,
+  onProjectFocus,
 }: CreativeWritingWorkspaceProps) {
   const [projects, setProjects] = useState(initialCreativeProjects);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export function CreativeWritingWorkspace({
     setProjects((current) => [project, ...current]);
     setCreationOpen(false);
     setActiveProjectId(project.id);
+    onProjectFocus(project);
     setFeedback(`已在当前演示中建立“${project.title}”。`);
   }
 
@@ -46,7 +49,10 @@ export function CreativeWritingWorkspace({
         <CreativeProjectStudio
           key={activeProject.id}
           project={activeProject}
-          onBack={() => setActiveProjectId(null)}
+          onBack={() => {
+            setActiveProjectId(null);
+            onProjectFocus(null);
+          }}
           onAskAi={onAskAi}
         />
       </div>
@@ -99,7 +105,10 @@ export function CreativeWritingWorkspace({
                 <div className="creative-card-meta">
                   <span>{project.progress}</span><span>{project.documentCount} 篇文档</span><span>{project.warningCount} 条提醒</span>
                 </div>
-                <button onClick={() => setActiveProjectId(project.id)}>打开项目</button>
+                <button onClick={() => {
+                  setActiveProjectId(project.id);
+                  onProjectFocus(project);
+                }}>打开项目</button>
               </article>
             ))}
             {visibleProjects.length === 0 && (

@@ -32,6 +32,7 @@ export function GmConsultationPrototype() {
   const [aiOpen, setAiOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiScope, setAiScope] = useState("潮汐来信 · 当前创作项目");
+  const [aiProjectId, setAiProjectId] = useState("tide-letter");
   const [selectedId, setSelectedId] = useState(prototypeScenarios[0].id);
   const [mode, setMode] = useState<ConsultationMode>("minimal");
   const [question, setQuestion] = useState(prototypeScenarios[0].question);
@@ -97,9 +98,10 @@ export function GmConsultationPrototype() {
 
   const pendingCount = records.filter((record) => record.status === "待确认").length;
 
-  function openAi(prompt = "", scope = "潮汐来信 · 当前创作项目") {
+  function openAi(prompt = "", scope = "潮汐来信 · 当前创作项目", projectId = "tide-letter") {
     setAiPrompt(prompt);
     setAiScope(scope);
+    setAiProjectId(projectId);
     setAiOpen(true);
   }
 
@@ -162,7 +164,7 @@ export function GmConsultationPrototype() {
                     ? "萨菲港旧案 · 老友组 · 第 3 次团"
                     : "全部资料 · 跨项目可见"}
           </div>
-          <button className="global-ai-button" onClick={() => openAi()}>
+          <button className="global-ai-button" onClick={() => openAi("", aiScope, aiProjectId)}>
             <span aria-hidden="true">AI</span>助手
           </button>
         </div>
@@ -170,7 +172,12 @@ export function GmConsultationPrototype() {
 
       <CreativeWritingWorkspace
         hidden={activeView !== "creative"}
-        onAskAi={(prompt, scope) => openAi(prompt, `${scope} · 当前创作项目`)}
+        onAskAi={(prompt, scope, projectId) => openAi(prompt, `${scope} · 当前创作项目`, projectId)}
+        onProjectFocus={(project) => {
+          if (!project) return;
+          setAiProjectId(project.id);
+          setAiScope(`${project.title} · 当前创作项目`);
+        }}
       />
 
       <CampaignProjectDashboard
@@ -390,9 +397,10 @@ export function GmConsultationPrototype() {
       ) : null}
 
       <LoreCueAiAssistant
-        key={`${aiOpen}-${aiScope}-${aiPrompt}`}
+        key={`${aiOpen}-${aiProjectId}-${aiScope}-${aiPrompt}`}
         open={aiOpen}
         initialPrompt={aiPrompt}
+        projectId={aiProjectId}
         scope={aiScope}
         onClose={() => setAiOpen(false)}
       />

@@ -13,6 +13,12 @@ import { CreativeWritingInspector } from "./creative_writing_inspector";
 import { CreativeBackupImport, type LoreCueBackupDocument } from "./creative_backup_import";
 import { CreativeConsistencyWorkbench } from "./creative_consistency_workbench";
 import { CreativeVersionWorkbench, type LoreCueWritingSnapshot } from "./creative_version_workbench";
+import {
+  addProjectRecoveryPoint,
+  ensureProjectEnvelope,
+  saveProjectDocuments,
+  saveProjectSnapshots,
+} from "./lorecue_project_store";
 
 const outlineCards = [
   { index: "01", title: "无潮之夜", purpose: "建立城市规则与来信", status: "已完成" },
@@ -59,7 +65,7 @@ function createInitialSnapshots(project: CreativeProject): LoreCueWritingSnapsho
 interface CreativeProjectStudioProps {
   project: CreativeProject;
   onBack: () => void;
-  onAskAi: (prompt: string, scope: string) => void;
+  onAskAi: (prompt: string, scope: string, projectId: string) => void;
 }
 
 export function CreativeProjectStudio({
@@ -79,8 +85,6 @@ export function CreativeProjectStudio({
   const [saveState, setSaveState] = useState<"已保存" | "保存中" | "尚未保存">("已保存");
   const [storageReady, setStorageReady] = useState(false);
   const [feedback, setFeedback] = useState("正文会自动保存到当前浏览器；AI 修改仍需逐项确认。");
-  const storageKey = `lorecue-writing:${project.id}`;
-  const snapshotStorageKey = `${storageKey}:snapshots`;
   const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
   const archivedCount = documents.filter((document) => document.archived).length;
   const visibleDocuments = useMemo(() => {
@@ -91,47 +95,47 @@ export function CreativeProjectStudio({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const stored = window.localStorage.getItem(storageKey);
-        if (stored) {
-          const restored = JSON.parse(stored) as StudioDocument[];
-          if (Array.isArray(restored) && restored.length > 0) {
-            setDocuments(restored);
-            setActiveDocumentId(restored.find((document) => !document.archived)?.id ?? restored[0].id);
-            setFeedback(`已从当前浏览器恢复 ${restored.length} 篇文档。`);
-          }
-        }
-        const storedSnapshots = window.localStorage.getItem(snapshotStorageKey);
-        if (storedSnapshots) {
-          const restoredSnapshots = JSON.parse(storedSnapshots) as LoreCueWritingSnapshot[];
-          if (Array.isArray(restoredSnapshots) && restoredSnapshots.length > 0) setSnapshots(restoredSnapshots);
-        }
+        const result = ensureProjectEnvelope(project.id, {
+          initialDocuments: createInitialDocuments(project),
+          initialSnapshots: createInitialSnapshots(project),
+        });
+        const restored = result.envelope.documents as StudioDocument[];
+        const restoredSnapshots = result.envelope.snapshots as LoreCueWritingSnapshot[];
+        setDocuments(restored);
+        setActiveDocumentId(restored.find((document) => !document.archived)?.id ?? restored[0].id);
+        setSnapshots(restoredSnapshots);
+        const latestImportRecovery = result.envelope.recoveryPoints.find((point) => point.kind === "pre-import");
+        if (latestImportRecovery) setPreImportDocuments(latestImportRecovery.documents as StudioDocument[]);
+        setFeedback(result.envelope.migratedFromLegacyAt
+          ? `旧版草稿已迁入项目数据仓，恢复 ${restored.length} 篇文档；旧数据仍保留。`
+          : `项目数据仓 v1 已就绪 · ${restored.length} 篇文档。`);
       } catch {
-        setFeedback("浏览器中的写作草稿无法读取，当前使用项目初始内容。");
+        setFeedback("项目数据仓无法读取，当前使用项目初始内容；异常原值不会被主动删除。");
       } finally {
         setStorageReady(true);
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [snapshotStorageKey, storageKey]);
+  }, [project]);
 
   useEffect(() => {
     if (!storageReady) return;
     const statusTimer = window.setTimeout(() => setSaveState("保存中"), 0);
     const timer = window.setTimeout(() => {
-      window.localStorage.setItem(storageKey, JSON.stringify(documents));
+      saveProjectDocuments(project.id, documents);
       setSaveState("已保存");
-      setFeedback("已自动保存到当前浏览器。");
+      setFeedback("已自动保存到项目数据仓 v1。");
     }, 700);
     return () => {
       window.clearTimeout(statusTimer);
       window.clearTimeout(timer);
     };
-  }, [documents, storageKey, storageReady]);
+  }, [documents, project.id, storageReady]);
 
   useEffect(() => {
     if (!storageReady) return;
-    window.localStorage.setItem(snapshotStorageKey, JSON.stringify(snapshots));
-  }, [snapshotStorageKey, snapshots, storageReady]);
+    saveProjectSnapshots(project.id, snapshots);
+  }, [project.id, snapshots, storageReady]);
 
   function updateActiveDocument(change: Partial<Pick<StudioDocument, "title" | "body" | "note" | "metadata">>) {
     setDocuments((current) => current.map((document) => document.id === activeDocument.id ? { ...document, ...change, updatedAt: "刚刚" } : document));
@@ -139,7 +143,7 @@ export function CreativeProjectStudio({
   }
 
   function handleSaveDraft() {
-    window.localStorage.setItem(storageKey, JSON.stringify(documents));
+    saveProjectDocuments(project.id, documents);
     setSaveState("已保存");
     setFeedback(`已保存“${activeDocument.title}” · ${activeDocument.body.replace(/\s/g, "").length} 字。`);
   }
@@ -229,7 +233,13 @@ export function CreativeProjectStudio({
   }
 
   function handleImportProjectBackup(importedDocuments: LoreCueBackupDocument[]) {
-    window.localStorage.setItem(`${storageKey}:pre-import`, JSON.stringify(documents));
+    addProjectRecoveryPoint(project.id, {
+      id: `${project.id}-pre-import-${Date.now()}`,
+      kind: "pre-import",
+      label: "导入前自动保护",
+      createdAt: new Date().toLocaleString("zh-CN"),
+      documents: cloneDocuments(documents),
+    });
     setPreImportDocuments(documents);
     setDocuments(importedDocuments);
     setActiveDocumentId(importedDocuments.find((document) => !document.archived)?.id ?? importedDocuments[0].id);
@@ -301,7 +311,7 @@ export function CreativeProjectStudio({
     }
 
     if (activeView === "一致性检查") {
-      return <CreativeConsistencyWorkbench projectTitle={project.title} onAskAi={(prompt) => onAskAi(prompt, project.title)} onFeedback={setFeedback} />;
+      return <CreativeConsistencyWorkbench projectTitle={project.title} onAskAi={(prompt) => onAskAi(prompt, project.title, project.id)} onFeedback={setFeedback} />;
     }
 
     if (activeView !== "正文") {
@@ -324,7 +334,7 @@ export function CreativeProjectStudio({
       onChangeBody={(body) => updateActiveDocument({ body })}
       onChangeMetadata={(metadata) => updateActiveDocument({ metadata })}
       onSave={handleSaveDraft}
-      onAskAi={(prompt) => onAskAi(prompt, project.title)}
+      onAskAi={(prompt) => onAskAi(prompt, project.title, project.id)}
       onFeedback={setFeedback}
     />;
   }
@@ -367,7 +377,7 @@ export function CreativeProjectStudio({
       <div className="studio-main">
         <header className="studio-context-bar">
           <div><span>{project.kind}</span><strong>{activeView}</strong></div>
-          <small>{project.progress} · {project.warningCount} 条待处理提醒</small>
+          <small>{project.progress} · {project.warningCount} 条待处理提醒 · 项目数据仓 v1</small>
         </header>
         {renderStudioContent()}
         <p className="writing-feedback" aria-live="polite">{feedback}</p>
@@ -378,7 +388,7 @@ export function CreativeProjectStudio({
         body={activeDocument.body}
         note={activeDocument.note ?? ""}
         onChangeNote={(note) => updateActiveDocument({ note })}
-        onAskAi={(prompt) => onAskAi(prompt, project.title)}
+        onAskAi={(prompt) => onAskAi(prompt, project.title, project.id)}
         onFeedback={setFeedback}
       /> : <aside className="writing-inspector">
         <div className="inspector-tabs"><button className="active">检查</button><button>引用</button><button>备注</button></div>
@@ -390,7 +400,7 @@ export function CreativeProjectStudio({
         <article className="continuity-issue high">
           <span>时间冲突</span><h3>港务处的关门时间</h3>
           <p>正文写作“雨停以后”，但地点卡注明值班记录只能在 18:00 前查阅。</p>
-          <button onClick={() => onAskAi("比较港务处营业时间的两处设定", project.title)}>展开依据</button>
+          <button onClick={() => onAskAi("比较港务处营业时间的两处设定", project.title, project.id)}>展开依据</button>
         </article>
         <article className="continuity-issue">
           <span>疑似重复</span><h3>“从来没有来过”</h3>

@@ -2,14 +2,9 @@
 
 import { useMemo, useState } from "react";
 import type { LoreCueBackupDocument } from "./creative_backup_import";
+import type { LoreCueStoredSnapshot } from "./lorecue_project_store";
 
-export interface LoreCueWritingSnapshot {
-  id: string;
-  label: string;
-  createdAt: string;
-  reason: string;
-  documents: LoreCueBackupDocument[];
-}
+export type LoreCueWritingSnapshot = LoreCueStoredSnapshot;
 
 interface CreativeVersionWorkbenchProps {
   documents: LoreCueBackupDocument[];

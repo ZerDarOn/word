@@ -141,7 +141,7 @@ test("includes creation, library, and provenance-aware AI workspaces", async () 
   assert.match(aiAssistant, /手动现场输入/);
   assert.match(aiAssistant, /handleConfirmDraft/);
   assert.match(aiAssistant, /尚未成为正式设定/);
-  assert.match(aiAssistant, /consultationStorageKey/);
+  assert.match(aiAssistant, /saveProjectConsultations/);
   assert.match(aiAssistant, /待确认咨询/);
   assert.match(aiAssistant, /handleMarkReviewed/);
   assert.match(aiAssistant, /未写入设定/);
@@ -539,8 +539,8 @@ test("provides a persistent long-form writing editor with reviewable AI changes"
     readFile(new URL("../app/creative_document_editor.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(projectStudio, /localStorage/);
-  assert.match(projectStudio, /lorecue-writing/);
+  assert.match(projectStudio, /ensureProjectEnvelope/);
+  assert.match(projectStudio, /saveProjectDocuments/);
   assert.match(projectStudio, /全文搜索/);
   assert.match(projectStudio, /项目目录与设定/);
   assert.match(projectStudio, /handleCreateDocument/);
@@ -603,9 +603,34 @@ test("validates backup identity and previews imports before recoverable replacem
   assert.match(backupImport, /parsed\.project\?\.id !== projectId/);
   assert.match(backupImport, /预览阶段没有改动当前项目/);
   assert.match(backupImport, /确认导入并保留撤销点/);
-  assert.match(studio, /:pre-import/);
+  assert.match(studio, /addProjectRecoveryPoint/);
   assert.match(studio, /handleUndoImport/);
   assert.match(studio, /撤销最近一次导入/);
+});
+
+test("centralizes project persistence with versioned and recoverable legacy migration", async () => {
+  const [store, studio, assistant, prototype, workspace] = await Promise.all([
+    readFile(new URL("../app/lorecue_project_store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lorecue_ai_assistant.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/gm_consultation_prototype.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_writing_workspace.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(store, /lorecue-project-store/);
+  assert.match(store, /LORECUE_PROJECT_STORE_VERSION = 1/);
+  assert.match(store, /lorecue-project-quarantine/);
+  assert.match(store, /legacyWritingKey/);
+  assert.match(store, /migratedFromLegacyAt/);
+  assert.match(store, /saveProjectDocuments/);
+  assert.match(store, /saveProjectSnapshots/);
+  assert.match(store, /saveProjectConsultations/);
+  assert.match(store, /addProjectRecoveryPoint/);
+  assert.match(studio, /项目数据仓 v1/);
+  assert.match(assistant, /projectId/);
+  assert.match(prototype, /aiProjectId/);
+  assert.match(prototype, /onProjectFocus/);
+  assert.match(workspace, /onProjectFocus\(project\)/);
 });
 
 test("provides an evidence-first project consistency resolution workbench", async () => {
@@ -635,7 +660,7 @@ test("persists whole-project snapshots with comparison and protected restore", a
   assert.match(versionWorkbench, /当前相对快照有变化/);
   assert.match(versionWorkbench, /恢复前最后确认/);
   assert.match(versionWorkbench, /确认恢复/);
-  assert.match(studio, /snapshotStorageKey/);
+  assert.match(studio, /saveProjectSnapshots/);
   assert.match(studio, /恢复前保护/);
   assert.match(studio, /<CreativeVersionWorkbench/);
 });

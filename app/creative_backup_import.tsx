@@ -1,18 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { WritingMetadata } from "./creative_document_editor";
+import type { LoreCueStoredDocument } from "./lorecue_project_store";
 
-export interface LoreCueBackupDocument {
-  id: string;
-  group: string;
-  title: string;
-  body: string;
-  updatedAt: string;
-  note?: string;
-  metadata?: WritingMetadata;
-  archived?: boolean;
-}
+export type LoreCueBackupDocument = LoreCueStoredDocument;
 
 interface BackupPreview {
   fileName: string;

@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  ensureProjectEnvelope,
+  saveProjectConsultations,
+  type LoreCueConsultationRecord,
+} from "./lorecue_project_store";
 
 type AiMode = "查设定" | "创作协作" | "冲突检查" | "GM 救场";
 type SourceKind = "source" | "session" | "private" | "live";
@@ -8,6 +13,7 @@ type SourceKind = "source" | "session" | "private" | "live";
 interface LoreCueAiAssistantProps {
   open: boolean;
   initialPrompt: string;
+  projectId: string;
   scope: string;
   onClose: () => void;
 }
@@ -18,17 +24,6 @@ interface ContextSource {
   detail: string;
   kind: SourceKind;
   defaultSelected: boolean;
-}
-
-interface ConsultationDraft {
-  id: string;
-  mode: AiMode;
-  speaker: string;
-  question: string;
-  sourceLabels: string[];
-  includesLiveContext: boolean;
-  createdAt: string;
-  status: "pending" | "reviewed";
 }
 
 const contextSources: ContextSource[] = [
@@ -48,31 +43,10 @@ const kindLabels: Record<SourceKind, string> = {
 const speakers = ["主持人视角", "伊芙琳", "斯诺森", "不代入角色"];
 const demoAnswer = "伊芙琳知道斯诺森在码头卸货，但现有资料没有写明他的住址。她可以提供外貌、工种和下班时间；具体住址需要调查，或由主持人临场补全。";
 
-function consultationStorageKey(scope: string) {
-  return `lorecue-ai-consultations:${scope}`;
-}
-
-function readConsultationDrafts(scope: string): ConsultationDraft[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = window.localStorage.getItem(consultationStorageKey(scope));
-    if (!stored) return [];
-    const parsed = JSON.parse(stored) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is ConsultationDraft => (
-      typeof item === "object" && item !== null
-      && typeof (item as ConsultationDraft).id === "string"
-      && typeof (item as ConsultationDraft).question === "string"
-      && ((item as ConsultationDraft).status === "pending" || (item as ConsultationDraft).status === "reviewed")
-    )).slice(0, 12);
-  } catch {
-    return [];
-  }
-}
-
 export function LoreCueAiAssistant({
   open,
   initialPrompt,
+  projectId,
   scope,
   onClose,
 }: LoreCueAiAssistantProps) {
@@ -87,7 +61,9 @@ export function LoreCueAiAssistant({
   const [showAdoptionReview, setShowAdoptionReview] = useState(false);
   const [adoptionStatus, setAdoptionStatus] = useState<"idle" | "pending">("idle");
   const [feedback, setFeedback] = useState("");
-  const [consultationDrafts, setConsultationDrafts] = useState<ConsultationDraft[]>(() => readConsultationDrafts(scope));
+  const [consultationDrafts, setConsultationDrafts] = useState<LoreCueConsultationRecord[]>(() => (
+    ensureProjectEnvelope(projectId, { legacyConsultationScope: scope }).envelope.consultations.slice(0, 12)
+  ));
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSources = useMemo(
@@ -145,19 +121,21 @@ export function LoreCueAiAssistant({
   }
 
   function handleConfirmDraft() {
-    const nextDraft: ConsultationDraft = {
+    const nextDraft: LoreCueConsultationRecord = {
       id: `${Date.now()}`,
       mode,
       speaker,
       question: question.trim(),
+      answer: demoAnswer,
       sourceLabels: activeSources.map((source) => source.label),
       includesLiveContext: Boolean(liveContext.trim()),
+      liveContext: liveContext.trim() || undefined,
       createdAt: new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
       status: "pending",
     };
     const nextDrafts = [nextDraft, ...consultationDrafts].slice(0, 12);
     setConsultationDrafts(nextDrafts);
-    window.localStorage.setItem(consultationStorageKey(scope), JSON.stringify(nextDrafts));
+    saveProjectConsultations(projectId, nextDrafts);
     setAdoptionStatus("pending");
     setShowAdoptionReview(false);
     setFeedback(mode === "GM 救场"
@@ -170,7 +148,7 @@ export function LoreCueAiAssistant({
       ? { ...draft, status: "reviewed" as const }
       : draft);
     setConsultationDrafts(nextDrafts);
-    window.localStorage.setItem(consultationStorageKey(scope), JSON.stringify(nextDrafts));
+    saveProjectConsultations(projectId, nextDrafts);
     setFeedback("该条咨询已标为已复盘；它仍未自动成为正式设定。");
   }
 
