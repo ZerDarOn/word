@@ -597,3 +597,19 @@ test("validates backup identity and previews imports before recoverable replacem
   assert.match(studio, /handleUndoImport/);
   assert.match(studio, /撤销最近一次导入/);
 });
+
+test("provides an evidence-first project consistency resolution workbench", async () => {
+  const [workbench, studio] = await Promise.all([
+    readFile(new URL("../app/creative_consistency_workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/creative_project_studio.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(workbench, /设定冲突/);
+  assert.match(workbench, /疑似重复/);
+  assert.match(workbench, /AI 语义候选/);
+  assert.match(workbench, /AI 候选，不是事实判定/);
+  assert.match(workbench, /查看双侧依据/);
+  assert.match(workbench, /确认处理结论/);
+  assert.match(workbench, /不会自动修改正文、设定卡或团历史/);
+  assert.match(studio, /<CreativeConsistencyWorkbench/);
+});

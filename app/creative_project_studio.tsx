@@ -11,6 +11,7 @@ import { CreativeNarrativeView } from "./creative_narrative_views";
 import { CreativeDocumentEditor, type WritingMetadata } from "./creative_document_editor";
 import { CreativeWritingInspector } from "./creative_writing_inspector";
 import { CreativeBackupImport, type LoreCueBackupDocument } from "./creative_backup_import";
+import { CreativeConsistencyWorkbench } from "./creative_consistency_workbench";
 
 const outlineCards = [
   { index: "01", title: "无潮之夜", purpose: "建立城市规则与来信", status: "已完成" },
@@ -293,6 +294,10 @@ export function CreativeProjectStudio({
           </div>
         </section>
       );
+    }
+
+    if (activeView === "一致性检查") {
+      return <CreativeConsistencyWorkbench projectTitle={project.title} onAskAi={(prompt) => onAskAi(prompt, project.title)} onFeedback={setFeedback} />;
     }
 
     if (activeView !== "正文") {

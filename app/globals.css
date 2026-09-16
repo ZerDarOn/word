@@ -781,6 +781,44 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .backup-import-preview footer { display: flex; justify-content: flex-end; gap: 7px; padding-top: 12px; border-top: 1px solid var(--line); }
 .backup-import-preview footer button { min-height: 32px; padding: 6px 11px; border: 1px solid var(--line); border-radius: 5px; font-size: 8px; font-weight: 800; background: var(--paper); cursor: pointer; }
 .backup-import-preview footer .primary-action { color: white; border-color: var(--accent); background: var(--accent); }
+.consistency-metrics { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.consistency-metrics article { display: grid; gap: 4px; padding: 15px; border-inline-end: 1px solid var(--line); }
+.consistency-metrics article:last-child { border-inline-end: 0; }
+.consistency-metrics strong { font-family: Georgia, serif; font-size: 24px; }
+.consistency-metrics span { color: var(--muted); font-size: 8px; }
+.consistency-filters { display: flex; gap: 5px; margin-bottom: 14px; }
+.consistency-filters button { min-height: 31px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 8px; background: var(--panel); cursor: pointer; }
+.consistency-filters button.active { color: white; border-color: var(--ink); background: var(--ink); }
+.consistency-layout { display: grid; grid-template-columns: minmax(230px, .72fr) minmax(430px, 1.28fr); gap: 12px; }
+.consistency-issue-list { display: grid; align-content: start; gap: 7px; }
+.consistency-issue-list > button { display: grid; gap: 7px; width: 100%; padding: 13px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); text-align: left; background: var(--panel); cursor: pointer; }
+.consistency-issue-list > button.active { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.consistency-issue-list > button > div, .consistency-issue-list footer { display: flex; align-items: center; gap: 5px; }
+.consistency-issue-list > button > div small { margin-inline-start: auto; color: var(--blue); font-size: 7px; }
+.consistency-issue-list .severity, .consistency-issue-list > button > div > span:nth-child(2) { padding: 3px 5px; border-radius: 999px; color: var(--muted); font-size: 7px; background: var(--paper-deep); }
+.consistency-issue-list .severity-高 { color: var(--accent); background: var(--accent-soft); }
+.consistency-issue-list strong { font-size: 11px; }
+.consistency-issue-list p { margin: 0; color: var(--muted); font-size: 8px; line-height: 1.5; }
+.consistency-issue-list footer { justify-content: space-between; padding-top: 7px; border-top: 1px solid var(--line); color: var(--muted); font-size: 7px; }
+.consistency-detail { padding: 20px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.consistency-detail > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.consistency-detail > header h3 { margin: 7px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 20px; }
+.detection-badge { flex: 0 0 auto; padding: 5px 7px; border-radius: 999px; color: var(--blue); font-size: 7px; font-weight: 800; background: var(--blue-soft); }
+.ai-candidate-warning { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--amber); border-radius: 5px; color: var(--muted); font-size: 8px; background: var(--amber-soft); }
+.ai-candidate-warning strong { color: var(--amber); }
+.evidence-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 15px 0; }
+.evidence-compare section { display: grid; align-content: start; gap: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); }
+.evidence-compare section > span { color: var(--accent); font-size: 8px; font-weight: 800; }
+.evidence-compare blockquote { margin: 0; font-family: Georgia, "Songti SC", serif; font-size: 12px; line-height: 1.7; }
+.evidence-compare small { color: var(--muted); font-size: 7px; line-height: 1.5; }
+.evidence-compare button { justify-self: start; padding: 0; border: 0; color: var(--blue); font-size: 8px; font-weight: 800; background: transparent; cursor: pointer; }
+.consistency-suggestion { padding: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-deep); }
+.consistency-suggestion p { margin: 8px 0; color: var(--muted); font-size: 9px; line-height: 1.7; }
+.consistency-suggestion button { padding: 0; border: 0; color: var(--blue); font-size: 8px; font-weight: 800; background: transparent; cursor: pointer; }
+.consistency-decisions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; }
+.consistency-decisions button { min-height: 32px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 5px; font-size: 8px; font-weight: 800; background: var(--paper); cursor: pointer; }
+.consistency-decisions .primary-action { color: white; border-color: var(--accent); background: var(--accent); }
+.consistency-boundary { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 7px; line-height: 1.6; }
 .document-search-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); font-size: 9px; text-align: center; }
 .document-tree section > div { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
 .document-tree section > div strong { color: var(--muted); font-size: 9px; letter-spacing: 0.12em; }
@@ -3272,6 +3310,12 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   .historical-columns { grid-template-columns: 1fr; }
   .historical-columns > div { border-inline-end: 0; border-top: 1px solid var(--line); }
   .historical-columns > div:first-child { border-top: 0; }
+  .consistency-metrics { grid-template-columns: 1fr 1fr; }
+  .consistency-metrics article:nth-child(2) { border-inline-end: 0; }
+  .consistency-metrics article:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
+  .consistency-layout { grid-template-columns: 1fr; }
+  .evidence-compare { grid-template-columns: 1fr; }
+  .consistency-decisions { align-items: stretch; flex-direction: column; }
 }
 
 @media (max-width: 420px) {
