@@ -43,6 +43,7 @@ export interface LoreCueCampaignArchive {
   records: SessionRecord[];
   handoffItems: LoreCueHandoffItem[];
   draftHandoffItems: LoreCueHandoffItem[];
+  draftPlayerKnownHandoffIds: string[];
   draftTitle: string;
   draftPlan: string;
 }
@@ -177,6 +178,7 @@ function createInitialArchive(campaignId: string): LoreCueCampaignArchive {
     records: clone(initialSessionRecords),
     handoffItems: [],
     draftHandoffItems: [],
+    draftPlayerKnownHandoffIds: [],
     draftTitle: "未命名场次",
     draftPlan: "承接灰潮号靠港线索，等待团后复盘完成后补充。",
   };
@@ -206,6 +208,9 @@ export function readCampaignArchive(campaignId: string): LoreCueCampaignArchive 
       records: value.records,
       handoffItems: Array.isArray(value.handoffItems) ? value.handoffItems.filter(isHandoffItem) : [],
       draftHandoffItems: Array.isArray(value.draftHandoffItems) ? value.draftHandoffItems.filter(isHandoffItem) : [],
+      draftPlayerKnownHandoffIds: Array.isArray(value.draftPlayerKnownHandoffIds)
+        ? value.draftPlayerKnownHandoffIds.filter((id): id is string => typeof id === "string")
+        : [],
       draftTitle: typeof value.draftTitle === "string" ? value.draftTitle : "未命名场次",
       draftPlan: typeof value.draftPlan === "string" ? value.draftPlan : "",
       updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
@@ -285,6 +290,7 @@ export function saveCampaignDraft(
   sessions: SessionSummary[],
   selectedSessionId: string,
   draftHandoffItems?: LoreCueHandoffItem[],
+  draftPlayerKnownHandoffIds?: string[],
 ) {
   return updateCampaignArchive(campaignId, (current) => ({
     ...current,
@@ -293,5 +299,8 @@ export function saveCampaignDraft(
     sessions: clone(sessions),
     selectedSessionId,
     draftHandoffItems: draftHandoffItems ? clone(draftHandoffItems) : current.draftHandoffItems,
+    draftPlayerKnownHandoffIds: draftPlayerKnownHandoffIds
+      ? [...draftPlayerKnownHandoffIds]
+      : current.draftPlayerKnownHandoffIds,
   }));
 }

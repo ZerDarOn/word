@@ -79,6 +79,16 @@ const baselineHandoffItems: LoreCueHandoffItem[] = [
   },
 ];
 
+const draftBriefSections: Array<{
+  kind: LoreCueHandoffItem["kind"];
+  title: string;
+  description: string;
+}> = [
+  { kind: "长期事实", title: "开场时已成立", description: "下一场开始前持续有效，但不代表玩家已经知道。" },
+  { kind: "未决问题", title: "待主持人裁定", description: "开团前准备答案、触发条件或保持开放。" },
+  { kind: "保留状态", title: "主持人私密提醒", description: "角色立场、秘密与尚未公开的场景状态。" },
+];
+
 function buildHandoffCandidates(records: SessionRecord[], existing: LoreCueHandoffItem[]) {
   const promotedRecords: LoreCueHandoffItem[] = records.flatMap((record) => {
     if (record.status !== "客观事实" && record.status !== "NPC 主张") return [];
@@ -118,6 +128,7 @@ export function SessionArchivePanel({
   const [draftPlan, setDraftPlan] = useState("承接灰潮号靠港线索，等待团后复盘完成后补充。");
   const [handoffItems, setHandoffItems] = useState<LoreCueHandoffItem[]>(baselineHandoffItems);
   const [draftHandoffItems, setDraftHandoffItems] = useState<LoreCueHandoffItem[]>([]);
+  const [draftPlayerKnownHandoffIds, setDraftPlayerKnownHandoffIds] = useState<string[]>([]);
   const [manualHandoffKind, setManualHandoffKind] = useState<LoreCueHandoffItem["kind"]>("未决问题");
   const [manualHandoffText, setManualHandoffText] = useState("");
   const [manualHandoffSource, setManualHandoffSource] = useState("");
@@ -134,6 +145,7 @@ export function SessionArchivePanel({
       setDraftPlan(archive.draftPlan);
       setHandoffItems(buildHandoffCandidates(archive.records, archive.handoffItems));
       setDraftHandoffItems(archive.draftHandoffItems);
+      setDraftPlayerKnownHandoffIds(archive.draftPlayerKnownHandoffIds);
       setFeedback(`场次数据仓 v1 已就绪 · ${archive.sessions.length} 次团 · ${archive.records.length} 条临场记录。`);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -141,6 +153,8 @@ export function SessionArchivePanel({
 
   const selectedSession =
     sessions.find((session) => session.id === selectedSessionId) ?? sessions[2];
+  const selectedSessionIndex = sessions.findIndex((session) => session.id === selectedSession.id);
+  const previousSession = selectedSessionIndex > 0 ? sessions[selectedSessionIndex - 1] : undefined;
   const sessionDeliveries = useSessionAssetDeliveries(campaignId, selectedSession.id);
   const sessionConsultations = useSessionConsultations(campaignId, selectedSession.id);
   const filteredTimeline = useMemo(
@@ -187,6 +201,7 @@ export function SessionArchivePanel({
     setDraftTitle("未命名场次");
     setDraftPlan("承接灰潮号靠港线索，等待团后复盘完成后补充。");
     setDraftHandoffItems([]);
+    setDraftPlayerKnownHandoffIds([]);
     setFeedback("已新建第 4 次团草稿并保存到本团场次数据仓。");
   }
 
@@ -273,13 +288,15 @@ export function SessionArchivePanel({
     const nextSessions = existingDraft
       ? sessions.map((session) => session.id === draft.id ? { ...session, title: nextTitle } : session)
       : [...sessions, { ...draft, title: nextTitle }];
+    const nextPlayerKnownIds = draftPlayerKnownHandoffIds.filter((id) => selectedItems.some((item) => item.id === id));
     setSessions(nextSessions);
     setSelectedSessionId(draft.id);
     setDraftTitle(nextTitle);
     setDraftPlan(nextPlan);
     setDraftHandoffItems(selectedItems);
+    setDraftPlayerKnownHandoffIds(nextPlayerKnownIds);
     saveCampaignHandoff(campaignId, handoffItems);
-    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id, selectedItems);
+    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id, selectedItems, nextPlayerKnownIds);
     setFeedback(`已把 ${selectedItems.length} 条有来源的承接项写入第 4 次团草稿。`);
   }
 
@@ -288,8 +305,27 @@ export function SessionArchivePanel({
       ? { ...session, title: draftTitle.trim() || "未命名场次" }
       : session);
     setSessions(nextSessions);
-    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId, draftHandoffItems);
+    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId, draftHandoffItems, draftPlayerKnownHandoffIds);
     setFeedback("下一次团草稿已保存；不会改动已归档的历史场次。");
+  }
+
+  function handleToggleDraftPlayerKnown(itemId: string) {
+    const nextIds = draftPlayerKnownHandoffIds.includes(itemId)
+      ? draftPlayerKnownHandoffIds.filter((id) => id !== itemId)
+      : [...draftPlayerKnownHandoffIds, itemId];
+    setDraftPlayerKnownHandoffIds(nextIds);
+    saveCampaignDraft(
+      campaignId,
+      draftTitle.trim() || "未命名场次",
+      draftPlan,
+      sessions,
+      selectedSessionId,
+      draftHandoffItems,
+      nextIds,
+    );
+    setFeedback(nextIds.includes(itemId)
+      ? "已明确标记为玩家开场已知；该条来源仍保留。"
+      : "已恢复为仅主持人可见；不会假设玩家知道这条内容。");
   }
 
   function handlePhaseChange(phase: SessionPhase) {
@@ -359,7 +395,7 @@ export function SessionArchivePanel({
           <div><dt>系统</dt><dd>D&amp;D 5e</dd></div>
           <div><dt>主持人</dt><dd>入住疯人院</dd></div>
           <div><dt>参与</dt><dd>5 名玩家 · 5 名角色</dd></div>
-          <div><dt>承接</dt><dd>第 2 次团“失踪的账本”</dd></div>
+          <div><dt>承接</dt><dd>{previousSession ? `${previousSession.number}“${previousSession.title}”` : "无前序场次"}</dd></div>
         </dl>
 
         <section className="archive-card session-delivery-summary" aria-label="本场玩家资料发放">
@@ -451,9 +487,17 @@ export function SessionArchivePanel({
             <label>准备推进到哪里<textarea rows={4} value={draftPlan} onChange={(event) => setDraftPlan(event.target.value)} /></label>
             <section className="draft-handoff-snapshot" aria-label="草稿承接来源快照">
               <header><div><span className="eyebrow">承接依据 · 写入快照</span><h3>这份草稿从哪里来</h3></div><b>{draftHandoffItems.length}</b></header>
-              {draftHandoffItems.length > 0 ? <div>{draftHandoffItems.map((item) => <article key={`draft-${item.id}`}>
-                <span>{item.kind}</span><strong>{item.text}</strong><small>{item.sourceSessionLabel} · {item.sourceLabel}</small>
-              </article>)}</div> : <p>尚未从团后复盘写入承接项；手写计划仍可保存，但不会被标成已有来源的复盘结论。</p>}
+              {draftHandoffItems.length > 0 ? <div className="draft-brief-sections">{draftBriefSections.map((section) => {
+                const sectionItems = draftHandoffItems.filter((item) => item.kind === section.kind);
+                return <section key={section.kind}>
+                  <div><h4>{section.title}</h4><p>{section.description}</p></div>
+                  {sectionItems.length > 0 ? sectionItems.map((item) => <article key={`draft-${item.id}`}>
+                    <span>{item.kind}</span><strong>{item.text}</strong><small>{item.sourceSessionLabel} · {item.sourceLabel}</small>
+                    <label><input type="checkbox" checked={draftPlayerKnownHandoffIds.includes(item.id)} onChange={() => handleToggleDraftPlayerKnown(item.id)} /> 玩家开场已知</label>
+                  </article>) : <p className="draft-brief-empty">本次没有此类承接。</p>}
+                </section>;
+              })}</div> : <p>尚未从团后复盘写入承接项；手写计划仍可保存，但不会被标成已有来源的复盘结论。</p>}
+              {draftHandoffItems.length > 0 && <p className="draft-audience-summary">玩家开场已知 {draftPlayerKnownHandoffIds.length} 条 · 其余 {draftHandoffItems.length - draftPlayerKnownHandoffIds.length} 条仅主持人可见</p>}
               <small>之后改变候选勾选不会回写这份快照；只有再次执行“写入第 4 次团草稿”才会更新。</small>
             </section>
             <button onClick={handleSaveDraft}>保存草稿</button>

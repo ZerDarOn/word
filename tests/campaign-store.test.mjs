@@ -133,6 +133,7 @@ test("brief, objectives, session list, and next-session draft update independent
     sessions,
     "session-4",
     store.readCampaignArchive("campaign-a").handoffItems,
+    ["handoff-fact-1"],
   );
 
   const archive = store.readCampaignArchive("campaign-a");
@@ -144,6 +145,7 @@ test("brief, objectives, session list, and next-session draft update independent
   assert.equal(archive.handoffItems[0].sourceSessionId, "session-3");
   assert.equal(archive.draftHandoffItems.length, 1);
   assert.equal(archive.draftHandoffItems[0].sourceLabel, "船期表 · 已确认");
+  assert.deepEqual(archive.draftPlayerKnownHandoffIds, ["handoff-fact-1"]);
   assert.equal(archive.sessions.length, 2);
   assert.equal(archive.selectedSessionId, "session-4");
   assert.equal(archive.draftTitle, "灰潮号靠港");
