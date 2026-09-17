@@ -45,8 +45,13 @@ const timelineFilters: Array<"全部" | TimelineKind> = [
 
 function sessionStatusClass(status: SessionSummary["status"]) {
   if (status === "进行中") return "live";
+  if (status === "待开团") return "ready";
   if (status === "草稿") return "draft";
   return "archived";
+}
+
+function isPreparatorySession(session: SessionSummary) {
+  return session.status === "草稿" || session.status === "待开团";
 }
 
 const baselineHandoffItems: LoreCueHandoffItem[] = [
@@ -129,6 +134,9 @@ export function SessionArchivePanel({
   const [handoffItems, setHandoffItems] = useState<LoreCueHandoffItem[]>(baselineHandoffItems);
   const [draftHandoffItems, setDraftHandoffItems] = useState<LoreCueHandoffItem[]>([]);
   const [draftPlayerKnownHandoffIds, setDraftPlayerKnownHandoffIds] = useState<string[]>([]);
+  const [draftAudienceReviewed, setDraftAudienceReviewed] = useState(false);
+  const [draftDate, setDraftDate] = useState("");
+  const [draftTime, setDraftTime] = useState("");
   const [manualHandoffKind, setManualHandoffKind] = useState<LoreCueHandoffItem["kind"]>("未决问题");
   const [manualHandoffText, setManualHandoffText] = useState("");
   const [manualHandoffSource, setManualHandoffSource] = useState("");
@@ -146,6 +154,10 @@ export function SessionArchivePanel({
       setHandoffItems(buildHandoffCandidates(archive.records, archive.handoffItems));
       setDraftHandoffItems(archive.draftHandoffItems);
       setDraftPlayerKnownHandoffIds(archive.draftPlayerKnownHandoffIds);
+      setDraftAudienceReviewed(archive.draftAudienceReviewed);
+      const storedDraft = archive.sessions.find(isPreparatorySession);
+      setDraftDate(storedDraft && storedDraft.date !== "待安排" ? storedDraft.date : "");
+      setDraftTime(storedDraft && storedDraft.time !== "时间未定" ? storedDraft.time : "");
       setFeedback(`场次数据仓 v1 已就绪 · ${archive.sessions.length} 次团 · ${archive.records.length} 条临场记录。`);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -169,6 +181,14 @@ export function SessionArchivePanel({
   const pendingReviewCount = pendingRecordCount + pendingConsultationCount;
   const historicalSnapshot = historicalSessionSnapshots[selectedSessionId];
   const showCurrentSession = selectedSessionId === "session-3";
+  const draftReadyChecks = [
+    { id: "title", label: "标题已确定", complete: draftTitle.trim().length > 0 && draftTitle.trim() !== "未命名场次" },
+    { id: "schedule", label: "日期与时间已安排", complete: Boolean(draftDate && draftTime) },
+    { id: "plan", label: "推进计划已填写", complete: draftPlan.trim().length > 0 },
+    { id: "sources", label: "承接依据已有来源", complete: draftHandoffItems.length > 0 },
+    { id: "audience", label: "玩家知情边界已核对", complete: draftAudienceReviewed },
+  ];
+  const draftReady = draftReadyChecks.every((item) => item.complete);
 
   function handleSaveBrief() {
     saveCampaignBrief(campaignId, brief);
@@ -176,9 +196,11 @@ export function SessionArchivePanel({
   }
 
   function handleCreateSession() {
-    const existingDraft = sessions.find((session) => session.status === "草稿");
+    const existingDraft = sessions.find(isPreparatorySession);
     if (existingDraft) {
       setSelectedSessionId(existingDraft.id);
+      setDraftDate(existingDraft.date === "待安排" ? "" : existingDraft.date);
+      setDraftTime(existingDraft.time === "时间未定" ? "" : existingDraft.time);
       saveCampaignSessions(campaignId, sessions, existingDraft.id);
       setFeedback("已切换到尚未填写的第 4 次团草稿。");
       return;
@@ -202,6 +224,9 @@ export function SessionArchivePanel({
     setDraftPlan("承接灰潮号靠港线索，等待团后复盘完成后补充。");
     setDraftHandoffItems([]);
     setDraftPlayerKnownHandoffIds([]);
+    setDraftAudienceReviewed(false);
+    setDraftDate("");
+    setDraftTime("");
     setFeedback("已新建第 4 次团草稿并保存到本团场次数据仓。");
   }
 
@@ -274,7 +299,7 @@ export function SessionArchivePanel({
       setFeedback("请先勾选至少一条承接项；未选择的候选不会进入下一场。");
       return;
     }
-    const existingDraft = sessions.find((session) => session.status === "草稿");
+    const existingDraft = sessions.find(isPreparatorySession);
     const draft = existingDraft ?? {
       id: "session-4",
       number: "第 4 次团",
@@ -295,18 +320,27 @@ export function SessionArchivePanel({
     setDraftPlan(nextPlan);
     setDraftHandoffItems(selectedItems);
     setDraftPlayerKnownHandoffIds(nextPlayerKnownIds);
+    setDraftAudienceReviewed(false);
     saveCampaignHandoff(campaignId, handoffItems);
-    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id, selectedItems, nextPlayerKnownIds);
+    saveCampaignDraft(campaignId, nextTitle, nextPlan, nextSessions, draft.id, selectedItems, nextPlayerKnownIds, false);
     setFeedback(`已把 ${selectedItems.length} 条有来源的承接项写入第 4 次团草稿。`);
   }
 
   function handleSaveDraft() {
     const nextSessions = sessions.map((session) => session.id === selectedSessionId
-      ? { ...session, title: draftTitle.trim() || "未命名场次" }
+      ? {
+        ...session,
+        title: draftTitle.trim() || "未命名场次",
+        date: draftDate || "待安排",
+        time: draftTime || "时间未定",
+        status: session.status === "待开团" && draftReady ? "待开团" as const : "草稿" as const,
+      }
       : session);
     setSessions(nextSessions);
-    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId, draftHandoffItems, draftPlayerKnownHandoffIds);
-    setFeedback("下一次团草稿已保存；不会改动已归档的历史场次。");
+    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId, draftHandoffItems, draftPlayerKnownHandoffIds, draftAudienceReviewed);
+    setFeedback(selectedSession.status === "待开团" && !draftReady
+      ? "修改后准备条件不再完整，已自动退回草稿。"
+      : "下一次团草稿已保存；不会改动已归档的历史场次。");
   }
 
   function handleToggleDraftPlayerKnown(itemId: string) {
@@ -314,6 +348,7 @@ export function SessionArchivePanel({
       ? draftPlayerKnownHandoffIds.filter((id) => id !== itemId)
       : [...draftPlayerKnownHandoffIds, itemId];
     setDraftPlayerKnownHandoffIds(nextIds);
+    setDraftAudienceReviewed(false);
     saveCampaignDraft(
       campaignId,
       draftTitle.trim() || "未命名场次",
@@ -322,10 +357,41 @@ export function SessionArchivePanel({
       selectedSessionId,
       draftHandoffItems,
       nextIds,
+      false,
     );
     setFeedback(nextIds.includes(itemId)
-      ? "已明确标记为玩家开场已知；该条来源仍保留。"
-      : "已恢复为仅主持人可见；不会假设玩家知道这条内容。");
+      ? "已明确标记为玩家开场已知；请重新核对完整知情边界。"
+      : "已恢复为仅主持人可见；请重新核对完整知情边界。");
+  }
+
+  function handleAudienceReviewedChange(checked: boolean) {
+    setDraftAudienceReviewed(checked);
+    saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, sessions, selectedSessionId, draftHandoffItems, draftPlayerKnownHandoffIds, checked);
+    setFeedback(checked ? "已确认本场玩家知情边界。" : "已取消知情边界确认，场次不能标记为待开团。");
+  }
+
+  function handleToggleSessionReady() {
+    if (selectedSession.status === "待开团") {
+      const nextSessions = sessions.map((session) => session.id === selectedSessionId ? { ...session, status: "草稿" as const } : session);
+      setSessions(nextSessions);
+      saveCampaignDraft(campaignId, draftTitle.trim() || "未命名场次", draftPlan, nextSessions, selectedSessionId, draftHandoffItems, draftPlayerKnownHandoffIds, draftAudienceReviewed);
+      setFeedback("已退回草稿，可以继续调整团前准备。");
+      return;
+    }
+    if (!draftReady) {
+      setFeedback("尚未满足全部开团准备条件，请先完成未勾选项目。");
+      return;
+    }
+    const nextSessions = sessions.map((session) => session.id === selectedSessionId ? {
+      ...session,
+      title: draftTitle.trim(),
+      date: draftDate,
+      time: draftTime,
+      status: "待开团" as const,
+    } : session);
+    setSessions(nextSessions);
+    saveCampaignDraft(campaignId, draftTitle.trim(), draftPlan, nextSessions, selectedSessionId, draftHandoffItems, draftPlayerKnownHandoffIds, draftAudienceReviewed);
+    setFeedback("第 4 次团已标记为待开团；仍可随时退回草稿，不会影响历史场次。");
   }
 
   function handlePhaseChange(phase: SessionPhase) {
@@ -476,14 +542,18 @@ export function SessionArchivePanel({
           </div>
         )}
 
-        {selectedSession.status === "草稿" && (
+        {isPreparatorySession(selectedSession) && (
           <section className="archive-card draft-session-card">
             <div>
-              <span className="eyebrow">下一次团 · 草稿</span>
-              <h2>先留一张空白场次卡</h2>
-              <p>日期、参与者和承接内容都可以等确认后再补，不会污染已经归档的第 3 次团。</p>
+              <span className="eyebrow">下一次团 · {selectedSession.status}</span>
+              <h2>{selectedSession.status === "待开团" ? "团前简报已具备执行条件" : "先留一张空白场次卡"}</h2>
+              <p>标题、时间、承接与知情边界全部明确后，才可以标记为待开团；历史场次不会被改写。</p>
             </div>
             <label>暂定标题<input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></label>
+            <div className="draft-schedule-fields">
+              <label>开团日期<input type="date" value={draftDate} onChange={(event) => setDraftDate(event.target.value)} /></label>
+              <label>开始时间<input type="time" value={draftTime} onChange={(event) => setDraftTime(event.target.value)} /></label>
+            </div>
             <label>准备推进到哪里<textarea rows={4} value={draftPlan} onChange={(event) => setDraftPlan(event.target.value)} /></label>
             <section className="draft-handoff-snapshot" aria-label="草稿承接来源快照">
               <header><div><span className="eyebrow">承接依据 · 写入快照</span><h3>这份草稿从哪里来</h3></div><b>{draftHandoffItems.length}</b></header>
@@ -498,9 +568,17 @@ export function SessionArchivePanel({
                 </section>;
               })}</div> : <p>尚未从团后复盘写入承接项；手写计划仍可保存，但不会被标成已有来源的复盘结论。</p>}
               {draftHandoffItems.length > 0 && <p className="draft-audience-summary">玩家开场已知 {draftPlayerKnownHandoffIds.length} 条 · 其余 {draftHandoffItems.length - draftPlayerKnownHandoffIds.length} 条仅主持人可见</p>}
+              {draftHandoffItems.length > 0 && <label className="draft-audience-review"><input type="checkbox" checked={draftAudienceReviewed} onChange={(event) => handleAudienceReviewedChange(event.target.checked)} /> 我已逐条核对玩家开场知情边界</label>}
               <small>之后改变候选勾选不会回写这份快照；只有再次执行“写入第 4 次团草稿”才会更新。</small>
             </section>
-            <button onClick={handleSaveDraft}>保存草稿</button>
+            <section className="draft-readiness" aria-label="开团准备度">
+              <header><div><span className="eyebrow">开团准备度</span><h3>{draftReadyChecks.filter((item) => item.complete).length} / {draftReadyChecks.length} 已完成</h3></div><b>{draftReady ? "可开团" : "准备中"}</b></header>
+              <ul>{draftReadyChecks.map((item) => <li className={item.complete ? "complete" : "pending"} key={item.id}><span>{item.complete ? "✓" : "○"}</span>{item.label}</li>)}</ul>
+            </section>
+            <div className="draft-actions">
+              <button className="secondary" onClick={handleSaveDraft}>保存当前内容</button>
+              <button className="ready-action" disabled={selectedSession.status !== "待开团" && !draftReady} onClick={handleToggleSessionReady}>{selectedSession.status === "待开团" ? "退回草稿" : "标记为待开团"}</button>
+            </div>
           </section>
         )}
 

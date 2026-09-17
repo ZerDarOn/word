@@ -133,6 +133,7 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(store, /LoreCueHandoffItem/);
   assert.match(store, /draftHandoffItems/);
   assert.match(store, /draftPlayerKnownHandoffIds/);
+  assert.match(store, /draftAudienceReviewed/);
   assert.match(prototype, /CURRENT_CAMPAIGN_ID/);
   assert.match(prototype, /saveCampaignRecords/);
   assert.match(prototype, /useSessionConsultations/);
@@ -168,6 +169,11 @@ test("persists campaign catalogs, sessions, and provenance review decisions by c
   assert.match(archivePanel, /玩家开场已知/);
   assert.match(archivePanel, /previousSession/);
   assert.match(archivePanel, /无前序场次/);
+  assert.match(archivePanel, /draftReadyChecks/);
+  assert.match(archivePanel, /玩家知情边界已核对/);
+  assert.match(archivePanel, /标记为待开团/);
+  assert.match(archivePanel, /退回草稿/);
+  assert.match(archivePanel, /handleToggleSessionReady/);
   assert.match(consultationHook, /readProjectConsultationsForSession/);
   assert.match(consultationHook, /LORECUE_PROJECT_STORE_EVENT/);
   assert.match(archiveData, /initialSessionRecords/);

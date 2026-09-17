@@ -436,6 +436,7 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 }
 .history-status.live { color: var(--forest); background: var(--forest-soft); }
 .history-status.draft { color: var(--amber); background: var(--amber-soft); }
+.history-status.ready { color: var(--blue); background: var(--blue-soft); }
 .new-session-button {
   display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 12px;
   border: 1px dashed #af9f87; border-radius: 8px; color: var(--accent-dark); font-size: 12px;
@@ -695,6 +696,7 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
   color: white; font-size: 11px; font-weight: 800; background: var(--accent); cursor: pointer;
 }
 .draft-session-card button:hover { background: var(--accent-dark); }
+.draft-schedule-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .draft-handoff-snapshot { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-soft); }
 .draft-handoff-snapshot header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .draft-handoff-snapshot h3 { margin: 3px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
@@ -714,6 +716,22 @@ h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; font-weight: 650; }
 .draft-handoff-snapshot article label input { display: inline-block; width: auto; margin: 0; padding: 0; accent-color: var(--blue); }
 .draft-handoff-snapshot .draft-brief-empty { min-height: 52px; padding: 9px; border: 1px dashed var(--line); border-radius: 5px; font-size: 10px; background: var(--paper); }
 .draft-handoff-snapshot .draft-audience-summary { padding: 9px 10px; border: 0; color: var(--blue); font-size: 10px; font-weight: 800; background: var(--blue-soft); }
+.draft-handoff-snapshot .draft-audience-review { display: flex; align-items: center; gap: 7px; padding: 10px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--ink); font-size: 10px; background: var(--paper); cursor: pointer; }
+.draft-handoff-snapshot .draft-audience-review input { display: inline-block; width: auto; margin: 0; padding: 0; accent-color: var(--forest); }
+.draft-readiness { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.draft-readiness header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.draft-readiness h3 { margin: 3px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
+.draft-readiness header b { padding: 4px 8px; border-radius: 999px; color: var(--blue); font-size: 10px; background: var(--blue-soft); }
+.draft-readiness ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 7px; margin: 0; padding: 0; list-style: none; }
+.draft-readiness li { display: flex; align-items: center; gap: 7px; padding: 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); font-size: 10px; background: var(--paper); }
+.draft-readiness li.complete { color: var(--forest); border-color: color-mix(in srgb, var(--forest) 35%, var(--line)); }
+.draft-readiness li span { font-weight: 900; }
+.draft-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.draft-session-card .draft-actions button { margin: 0; }
+.draft-session-card .draft-actions .secondary { color: var(--accent); background: var(--paper); }
+.draft-session-card .draft-actions .ready-action { border-color: var(--blue); background: var(--blue); }
+.draft-session-card .draft-actions .ready-action:hover { background: color-mix(in srgb, var(--blue) 82%, black); }
+.draft-session-card .draft-actions button:disabled { opacity: .45; cursor: not-allowed; }
 
 .topbar-actions { display: flex; align-items: center; gap: 14px; }
 .global-ai-button {

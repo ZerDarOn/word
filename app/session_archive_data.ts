@@ -28,7 +28,7 @@ export type SessionSummary = {
   title: string;
   date: string;
   time: string;
-  status: "已归档" | "进行中" | "草稿";
+  status: "已归档" | "进行中" | "草稿" | "待开团";
   active?: boolean;
 };
 

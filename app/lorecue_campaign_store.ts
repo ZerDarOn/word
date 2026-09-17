@@ -44,6 +44,7 @@ export interface LoreCueCampaignArchive {
   handoffItems: LoreCueHandoffItem[];
   draftHandoffItems: LoreCueHandoffItem[];
   draftPlayerKnownHandoffIds: string[];
+  draftAudienceReviewed: boolean;
   draftTitle: string;
   draftPlan: string;
 }
@@ -83,7 +84,7 @@ function isSessionSummary(value: unknown): value is SessionSummary {
     && typeof session.title === "string"
     && typeof session.date === "string"
     && typeof session.time === "string"
-    && (session.status === "已归档" || session.status === "进行中" || session.status === "草稿");
+    && (session.status === "已归档" || session.status === "进行中" || session.status === "草稿" || session.status === "待开团");
 }
 
 function isSessionRecord(value: unknown): value is SessionRecord {
@@ -179,6 +180,7 @@ function createInitialArchive(campaignId: string): LoreCueCampaignArchive {
     handoffItems: [],
     draftHandoffItems: [],
     draftPlayerKnownHandoffIds: [],
+    draftAudienceReviewed: false,
     draftTitle: "未命名场次",
     draftPlan: "承接灰潮号靠港线索，等待团后复盘完成后补充。",
   };
@@ -211,6 +213,7 @@ export function readCampaignArchive(campaignId: string): LoreCueCampaignArchive 
       draftPlayerKnownHandoffIds: Array.isArray(value.draftPlayerKnownHandoffIds)
         ? value.draftPlayerKnownHandoffIds.filter((id): id is string => typeof id === "string")
         : [],
+      draftAudienceReviewed: typeof value.draftAudienceReviewed === "boolean" ? value.draftAudienceReviewed : false,
       draftTitle: typeof value.draftTitle === "string" ? value.draftTitle : "未命名场次",
       draftPlan: typeof value.draftPlan === "string" ? value.draftPlan : "",
       updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
@@ -291,6 +294,7 @@ export function saveCampaignDraft(
   selectedSessionId: string,
   draftHandoffItems?: LoreCueHandoffItem[],
   draftPlayerKnownHandoffIds?: string[],
+  draftAudienceReviewed?: boolean,
 ) {
   return updateCampaignArchive(campaignId, (current) => ({
     ...current,
@@ -302,5 +306,8 @@ export function saveCampaignDraft(
     draftPlayerKnownHandoffIds: draftPlayerKnownHandoffIds
       ? [...draftPlayerKnownHandoffIds]
       : current.draftPlayerKnownHandoffIds,
+    draftAudienceReviewed: typeof draftAudienceReviewed === "boolean"
+      ? draftAudienceReviewed
+      : current.draftAudienceReviewed,
   }));
 }
